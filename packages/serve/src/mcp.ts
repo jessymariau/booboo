@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { z } from "zod";
 import type { BOrg } from "@booboo-brain/spec";
 import { orgBootSlice } from "@booboo-brain/spec";
@@ -11,8 +12,13 @@ const j = (v: unknown) => ({ content: [{ type: "text" as const, text: JSON.strin
 /** Expose the query index as an MCP server over stdio, so any AI client (Claude, etc.) can
  *  query the brain: stats → search → node → neighbours → path. With an org loaded,
  *  agents also BOOT from here (booboo_boot) — the organigram is the authority. With a
- *  `writer`, agents also WRITE (remember/report) — the live half of the memory system. */
-export async function runMcp(ix: BoobooIndex, name = "booboo", org?: BOrg, writer?: JournalWriter): Promise<void> {
+ *  `writer`, agents also WRITE (remember/report) — the live half of the memory system.
+ *
+ *  `transport` defaults to stdio (what `booboo mcp` and every desktop client use).
+ *  Pass one to drive the SAME server over another channel — the demo site's
+ *  Streamable-HTTP `/mcp` is a second implementation of these tools today, and
+ *  two implementations of one fact drift (see GAPS C29/C33). */
+export async function runMcp(ix: BoobooIndex, name = "booboo", org?: BOrg, writer?: JournalWriter, transport?: Transport): Promise<void> {
   const server = new McpServer({ name, version: "1.0.0" });
 
   if (org) {
@@ -110,5 +116,5 @@ export async function runMcp(ix: BoobooIndex, name = "booboo", org?: BOrg, write
     );
   }
 
-  await server.connect(new StdioServerTransport());
+  await server.connect(transport ?? new StdioServerTransport());
 }
