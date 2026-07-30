@@ -1,7 +1,7 @@
 {
   "name": "@booboo-brain/panel",
-  "version": "0.5.6",
-  "description": "Booboo panel \u2014 the organigram. Run your agents like a company: a drag-drop hierarchy your agents boot from, with buckets, reports, rules and the 3D graph, over one org file + snapshot.",
+  "version": "0.5.7",
+  "description": "Booboo panel — the organigram. Run your agents like a company: a drag-drop hierarchy your agents boot from, with buckets, reports, rules and the 3D graph, over one org file + snapshot.",
   "license": "MIT",
   "repository": {
     "type": "git",

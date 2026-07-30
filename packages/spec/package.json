@@ -1,7 +1,7 @@
 {
   "name": "@booboo-brain/spec",
-  "version": "0.3.1",
-  "description": "Booboo graph spec \u2014 the JSON contract every adapter emits and every consumer reads.",
+  "version": "0.3.2",
+  "description": "Booboo graph spec — the JSON contract every adapter emits and every consumer reads.",
   "license": "MIT",
   "repository": {
     "type": "git",
