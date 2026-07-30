@@ -73,6 +73,15 @@ await writeFile(
         "api/mcp.mjs": { maxDuration: 60, includeFiles: "api/_data/**" },
         "api/panelapi.mjs": { maxDuration: 30, includeFiles: "api/_data/**" },
       },
+      // The viewer and panel are built with base:"./" so the published packages
+      // work from any subpath. That makes the trailing slash load-bearing: at
+      // /viewer the browser resolves ./assets against the domain root and 404s,
+      // at /viewer/ it resolves correctly. Send the bare paths to the slashed ones.
+      redirects: [
+        { source: "/viewer", destination: "/viewer/", permanent: false },
+        { source: "/chart", destination: "/chart/", permanent: false },
+        { source: "/view", destination: "/viewer/", permanent: false },
+      ],
       rewrites: [
         { source: "/mcp", destination: "/api/mcp" },
         // the panel app's same-origin API, funnelled into one read-only function
@@ -87,7 +96,6 @@ await writeFile(
         { source: "/api/neighbors/:id", destination: "/api/panelapi?r=neighbors&id=:id" },
         // the panel's embedded Graph tab expects the CLI server's paths
         { source: "/snapshot.json", destination: "/pemberton.booboo.json" },
-        { source: "/view", destination: "/viewer/index.html" },
         { source: "/view/", destination: "/viewer/index.html" },
         { source: "/view/:path+", destination: "/viewer/:path+" },
       ],
