@@ -152,7 +152,7 @@ product, play with it, and want it — without installing?
 | A6 | **Understand the model** | ✅ | Section 03 teaches the five nouns — layer, agent, bucket, rule, boot — each with the Pemberton as the worked example, closing on a real unedited `booboo_boot("housekeeping")` slice showing rules in inheritance order. |
 | A7 | Try the ASK face | ✅ | Four question chips fire real JSON-RPC at `/mcp` from the page and render the answer. Verified in-browser on the live domain: 3 majors this week · 98/14/12 absence ranking · incidents by department · the Housekeeping boot slice with rules in inheritance order. |
 | A8 | Grasp "three faces" | ✅ | Section 02 names SEE / GOVERN / ASK, one card each, every one a live link. |
-| A9 | Convert | 🟡 | `npx` command + GitHub. No "hosted / done-for-you" path, no email capture, nothing for a non-technical buyer. |
+| A9 | Convert | ✅ | Three doors since 2026-07-30 (dpl_CSXBPQ41WacscouAaepQHYj7xXym): `npx` stays the first ask; §05 done-for-you (Calendly 15-min chat + mailto, no pricing **by design** — prices follow demand, Jesse ruling) and §06 the letters (Substack embed). Verified on prod, not in dist: DOM probe returned the iframe rendered 478×148 with the right src and the CTA computed to brass `rgb(169,117,58)` → calendly.com/jessedu29200/chat, plus a viewport capture of both sections. Spec lives in OS row `fractional-hq/booboo-site-minimum`. Capture gotcha for the next reader: `shot.mjs` clips page-absolute coordinates, so a post-`scrollIntoView` shot needs `--full` — the default clip photographs the page top wherever the scroll went. |
 
 A3, A5, A6, A8 closed; A4 partly. The label is written: the site teaches the
 model, the viewer names its own bands and points at the problem. What remains

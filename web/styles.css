@@ -376,3 +376,14 @@ h2.display em { font-style: italic; color: var(--brass-l); }
     background: linear-gradient(to top, var(--card-l) 60%, transparent);
   }
 }
+
+/* ── 05 done-for-you + 06 letters — the conversion floor (GAPS A9).
+   Deliberately AFTER the npx ask: devs install; these catch the reader
+   who won't. Buttons take the close's brass, not the hero's gold — these
+   sections sit on paper. */
+.dfy .btn-primary { background: var(--brass-l); color: #fff; box-shadow: 0 10px 30px -12px rgba(169,117,58,.55); }
+.dfy .btn-ghost { border-color: var(--rule-2); color: var(--ink-2); }
+.dfy .btn-ghost:hover { border-color: var(--brass-l); color: var(--ink); }
+.cta-row { display: flex; flex-wrap: wrap; gap: .85rem; margin-top: 1.6rem; }
+.letters-embed { margin-top: 1.8rem; }
+.letters-embed iframe { width: 100%; max-width: 480px; height: 150px; border: 1px solid var(--rule-2); border-radius: 10px; background: #fff; }
