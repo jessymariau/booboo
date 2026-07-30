@@ -5,13 +5,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jessedu29260-netizen/booboo.git",
+    "url": "git+https://github.com/jessymariau/booboo.git",
     "directory": "packages/panel"
   },
   "bugs": {
-    "url": "https://github.com/jessedu29260-netizen/booboo/issues"
+    "url": "https://github.com/jessymariau/booboo/issues"
   },
-  "homepage": "https://github.com/jessedu29260-netizen/booboo#readme",
+  "homepage": "https://github.com/jessymariau/booboo#readme",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

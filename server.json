@@ -1,20 +1,20 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jessedu29260-netizen/booboo",
+  "name": "io.github.jessymariau/booboo",
   "title": "Booboo",
   "description": "Query your AI system's wiring, knowledge, memory, agents and crons as one rooted graph over MCP.",
   "websiteUrl": "https://fractionalhq.uk",
   "repository": {
-    "url": "https://github.com/jessedu29260-netizen/booboo",
+    "url": "https://github.com/jessymariau/booboo",
     "source": "github"
   },
-  "version": "0.5.0",
+  "version": "0.5.2",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@booboo-brain/cli",
-      "version": "0.5.0",
+      "version": "0.5.2",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

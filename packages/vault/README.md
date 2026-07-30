@@ -1,6 +1,6 @@
 # @booboo-brain/vault
 
-Emit a [Booboo](https://github.com/jessedu29260-netizen/booboo) brain as a **wiki-linked
+Emit a [Booboo](https://github.com/jessymariau/booboo) brain as a **wiki-linked
 markdown vault** (Obsidian-compatible). A database is queryable — files are **readable
 and portable**: a human can browse the brain on a couch, and any agent from any provider
 can read it with zero infrastructure. Emit it nightly and the vault doubles as your
@@ -35,4 +35,4 @@ const r = emitVault(graph, org, { out: "vault" });
 `VaultOptions`: `out` (target dir) · `clean` (wipe first, default `true`) ·
 `maxPerCluster` (cap node pages per cluster, `0` = no cap; MOCs always list everything).
 
-Part of [Booboo](https://github.com/jessedu29260-netizen/booboo) — the unified operational brain. MIT.
+Part of [Booboo](https://github.com/jessymariau/booboo) — the unified operational brain. MIT.

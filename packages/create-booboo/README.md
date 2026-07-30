@@ -1,6 +1,6 @@
 # create-booboo
 
-Scaffold a runnable [Booboo](https://github.com/jessedu29260-netizen/booboo) brain in one
+Scaffold a runnable [Booboo](https://github.com/jessymariau/booboo) brain in one
 command. Zero dependencies, pure stdlib.
 
 ## Use
@@ -26,4 +26,4 @@ npm run view       # see your brain in 3D (opens your browser)
 
 Pass `--force` to scaffold into a non-empty directory.
 
-Part of [Booboo](https://github.com/jessedu29260-netizen/booboo) — the unified operational brain. MIT.
+Part of [Booboo](https://github.com/jessymariau/booboo) — the unified operational brain. MIT.

@@ -4,7 +4,7 @@ Status of getting `booboo mcp` listed across the MCP ecosystem. Prereq (done): t
 README carries a copy-paste **Connect it to Claude / Cursor (MCP)** config block, install
 steps, usage, and MIT license — every directory below wants exactly that.
 
-Repo: `https://github.com/jessedu29260-netizen/booboo` · npm: `@booboo-brain/cli` (`booboo mcp`).
+Repo: `https://github.com/jessymariau/booboo` · npm: `@booboo-brain/cli` (`booboo mcp`).
 
 Every one of these needs Jesse's logged-in account or a PR under his name — none can be
 fired autonomously. Do them in one guided pass (Claude drives Chrome; Jesse authenticates).
@@ -31,7 +31,7 @@ Notes:
 - **2026-07-11 re-submit (Frankie + Jesse, guided pass):** verified booboo still NOT on Glama
   (search "booboo" → only unrelated `booboooking`; empty match list). Jesse signed into Glama via
   GitHub (jessedu29260-netizen, repo owner); Claude drove the **Add Server → Server tab** form:
-  Name `Booboo`, repo `https://github.com/jessedu29260-netizen/booboo`, 2-sentence MCP-forward
+  Name `Booboo`, repo `https://github.com/jessymariau/booboo`, 2-sentence MCP-forward
   description. **Submit for Review accepted** (dialog closed, no validation error). Glama reviews
   before public, so it is NOT yet searchable and the direct slug 404s — that is expected pending
   state, not a failure. Glama exposes no submitter-side "my submissions" view to confirm from.
@@ -58,11 +58,22 @@ Notes:
   API (`status=active`, `isLatest=true`). Then confirmed **PulseMCP already lists Booboo** (auto-ingested the
   Jul-5 entry) — so #5 and #6 are both DONE. **Live coverage now: Glama · mcp.so · PulseMCP · Official Registry.**
   Open: awesome-mcp-servers PR #9087 (missing-glama label, pending bot re-eval). Not pursuing: Smithery (remote-only).
+- **2026-07-26 — GitHub handle renamed `jessedu29260-netizen` → `jessymariau`.** Older entries above
+  keep the old handle because that is what was true on the day; the repo's own links and
+  `server.json` / `mcpName` were rewritten to `jessymariau`. The registry namespace does **not**
+  migrate — `io.github.*` publish rights are granted against the *current* GitHub login
+  (`buildPermissions(user.Login)` → `io.github.<login>/*`), so the three published versions under
+  `io.github.jessedu29260-netizen/booboo` are, as of the rename, outside Jesse's control. Republish
+  under `io.github.jessymariau/booboo` is the only supported path (registry issue
+  [#1243](https://github.com/modelcontextprotocol/registry/issues/1243) is the same case, answered by
+  a maintainer). **Downstream directories still carry the old handle and need re-pointing after the
+  republish:** Glama (owner field), PulseMCP (auto-ingests the registry — will follow the new entry),
+  mcp.so, and awesome-mcp-servers PR #9087.
 
 ## Paste-ready copy (one guided pass — Claude drives, Jesse authenticates)
 
 **Name:** Booboo
-**Repo:** `https://github.com/jessedu29260-netizen/booboo`
+**Repo:** `https://github.com/jessymariau/booboo`
 **npm:** `@booboo-brain/cli` (+ spec/build/serve/viewer/panel, `create-booboo`)
 **License:** MIT · TypeScript · runs locally, cross-platform
 

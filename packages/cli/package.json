@@ -1,18 +1,18 @@
 {
   "name": "@booboo-brain/cli",
   "version": "0.5.1",
-  "mcpName": "io.github.jessedu29260-netizen/booboo",
+  "mcpName": "io.github.jessymariau/booboo",
   "description": "Booboo CLI \u2014 one `booboo` command: build | serve | mcp | view | panel. Lazy-loads each subcommand so a build-only run never pulls the server or viewer.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jessedu29260-netizen/booboo.git",
+    "url": "git+https://github.com/jessymariau/booboo.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/jessedu29260-netizen/booboo/issues"
+    "url": "https://github.com/jessymariau/booboo/issues"
   },
-  "homepage": "https://github.com/jessedu29260-netizen/booboo#readme",
+  "homepage": "https://github.com/jessymariau/booboo#readme",
   "type": "module",
   "bin": {
     "booboo": "./dist/cli.js"

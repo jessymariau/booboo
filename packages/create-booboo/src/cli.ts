@@ -155,7 +155,7 @@ const pkgJson = JSON.stringify(
 
 const readme = `# ${name} — a Booboo brain
 
-A rooted, queryable graph of your system, built with [Booboo](https://github.com/jessedu29260-netizen/booboo) (the unified operational brain).
+A rooted, queryable graph of your system, built with [Booboo](https://github.com/jessymariau/booboo) (the unified operational brain).
 
 ## First: shape it to your system
 

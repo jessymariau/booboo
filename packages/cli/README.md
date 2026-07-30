@@ -15,4 +15,4 @@ booboo view   --demo --nodes 100000                # a synthetic brain, no data 
 `view` serves the prebuilt [`@booboo-brain/viewer`](../viewer) app. Install this one package to
 get the `booboo` command — it brings all of them in.
 
-Part of [Booboo](https://github.com/jessedu29260-netizen/booboo) — the unified operational brain. MIT.
+Part of [Booboo](https://github.com/jessymariau/booboo) — the unified operational brain. MIT.
