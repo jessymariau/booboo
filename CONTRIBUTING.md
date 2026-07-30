@@ -6,7 +6,7 @@ fastest way to contribute is to keep changes small and verified.
 ## Dev setup
 
 ```bash
-git clone https://github.com/jessedu29260-netizen/booboo.git
+git clone https://github.com/jessymariau/booboo.git
 cd booboo
 pnpm install
 pnpm build          # builds all packages (tsup + the viewer's static app)

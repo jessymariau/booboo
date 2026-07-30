@@ -1,6 +1,6 @@
 # @booboo-brain/panel
 
-The [Booboo](https://github.com/jessedu29260-netizen/booboo) **organigram** — your agent
+The [Booboo](https://github.com/jessymariau/booboo) **organigram** — your agent
 fleet as a real org chart, where the chart is the **authority**, not a diagram. Drag an
 agent under a new parent, hit apply, and the org file changes: validated before every
 write (a cycle can never land), versioned in git. Agents that boot with `booboo_boot`
@@ -29,7 +29,7 @@ Five tabs over one org file + one snapshot:
 Reports and buckets fill two ways: **live**, when an agent calls `booboo_remember` /
 `booboo_report` over MCP (durable journal writes, no rebuild), or **in bulk** from your
 own tables via config — see the repo's
-[docs/CONFIG.md](https://github.com/jessedu29260-netizen/booboo/blob/main/docs/CONFIG.md).
+[docs/CONFIG.md](https://github.com/jessymariau/booboo/blob/main/docs/CONFIG.md).
 
 ## As a React component
 
@@ -49,4 +49,4 @@ export function OrgPage() {
 `Panel` mounts the full five-tab app; the `api` prop (`ApiFn`) routes every read/write so
 you can back it with anything that speaks the same `/api/*` shape the CLI serves.
 
-Part of [Booboo](https://github.com/jessedu29260-netizen/booboo) — the unified operational brain. MIT.
+Part of [Booboo](https://github.com/jessymariau/booboo) — the unified operational brain. MIT.

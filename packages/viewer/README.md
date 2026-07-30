@@ -1,9 +1,9 @@
 # @booboo-brain/viewer
 
-The [Booboo](https://github.com/jessedu29260-netizen/booboo) 3D renderer — a scale-first
+The [Booboo](https://github.com/jessymariau/booboo) 3D renderer — a scale-first
 React Three Fiber component that draws any Booboo graph as a rooted, tiered brain. One GPU
 point field + tier-LOD, so a million nodes stay at 60fps (see
-[SCALE.md](https://github.com/jessedu29260-netizen/booboo/blob/main/SCALE.md)).
+[SCALE.md](https://github.com/jessymariau/booboo/blob/main/SCALE.md)).
 
 ## Install
 
@@ -37,4 +37,4 @@ The package ships a prebuilt static app (`dist-app/`) that the
 [`@booboo-brain/cli`](../cli) `view` command serves directly. For monorepo hacking there's a
 playground: `pnpm -F @booboo-brain/viewer dev`, then open with `?n=1000000`.
 
-Part of [Booboo](https://github.com/jessedu29260-netizen/booboo) — the unified operational brain. MIT.
+Part of [Booboo](https://github.com/jessymariau/booboo) — the unified operational brain. MIT.

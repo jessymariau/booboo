@@ -1,6 +1,6 @@
 # @booboo-brain/spec
 
-The [Booboo](https://github.com/jessedu29260-netizen/booboo) graph contract — the tiny JSON
+The [Booboo](https://github.com/jessymariau/booboo) graph contract — the tiny JSON
 spec every adapter emits and every consumer reads. Types + a validator, zero runtime deps.
 
 ## Install
@@ -26,6 +26,6 @@ const { ok, errors, warnings } = validate(graph); // never throws
 
 `validate` returns errors for missing required fields and warnings for dangling links /
 unknown layers (the builder drops those). The full human-readable spec lives in
-[SPEC.md](https://github.com/jessedu29260-netizen/booboo/blob/main/SPEC.md).
+[SPEC.md](https://github.com/jessymariau/booboo/blob/main/SPEC.md).
 
-Part of [Booboo](https://github.com/jessedu29260-netizen/booboo) — the unified operational brain. MIT.
+Part of [Booboo](https://github.com/jessymariau/booboo) — the unified operational brain. MIT.
