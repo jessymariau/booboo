@@ -81,6 +81,19 @@ await writeFile(
         { source: "/viewer", destination: "/viewer/", permanent: false },
         { source: "/chart", destination: "/chart/", permanent: false },
         { source: "/view", destination: "/viewer/", permanent: false },
+        // A bare /viewer/ renders main.tsx's 3-node placeholder — correct for the
+        // published package (a local user has no snapshot yet), wrong for this
+        // site, where it means every shared, typed or bookmarked viewer link
+        // shows a toy instead of the 2,839-node house. Fixed here rather than in
+        // the package so the placeholder keeps working for everyone else.
+        // `missing` guards both entry params: ?file= is an explicit snapshot and
+        // ?n= is the synthetic generator, so neither gets clobbered.
+        {
+          source: "/viewer/",
+          destination: "/viewer/?file=/pemberton.booboo.json",
+          permanent: false,
+          missing: [{ type: "query", key: "file" }, { type: "query", key: "n" }],
+        },
       ],
       rewrites: [
         { source: "/mcp", destination: "/api/mcp" },
