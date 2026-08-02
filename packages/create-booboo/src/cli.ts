@@ -434,3 +434,4 @@ console.log("──────────────────────�
 console.log("Your agent's contract is AGENTS.md (CLAUDE.md imports it) — Claude/Codex read it");
 console.log("automatically in this folder and will follow the brain's conventions.\n");
 console.log("Then edit booboo.config.yaml to point at your own data — a postgres example is included.\n");
+console.log("If the scaffold saves you an evening, a star helps the next builder find it → https://github.com/jessymariau/booboo\n");

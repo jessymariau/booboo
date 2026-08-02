@@ -169,7 +169,7 @@ of the wound is depth of play, not comprehension.
 | Staff board `/chart/` | ✅ | Lanes stack downward, scrolls correctly, 15 real vendor marks, 3D hover, personas + rule counts + boot-order rules + contracts, read-only apply ✅. The CRAFT §5 craft pass shipped 2026-07-19 — see A5: brass rails + elbows, card faces (health/reach/rules/last-report, redundant role line gone), show-the-law overlay, ledger shelf, semantic zoom. All five verified live (screenshots below). Still open: golden-frame CI (A7), mobile pass (C9). |
 | ASK `/mcp` | ✅ | Authless Streamable-HTTP, 8 tools incl. `booboo_count`, verified live from a real claude.ai connector: 3 majors this week, 98-vs-14 absences, boot slice correct. |
 | Brand domain | ✅ | `booboo.fractionalhq.uk` — A record via Porkbun API, propagated, cert valid, all routes 200. |
-| README | 🟡 | Leads with the zero-config command; badges; demo link. Not yet updated for `booboo_count` or the brand URL. |
+| README | ✅ | Leads with the zero-config command; badges; documents `booboo_count` (Tools table); demo link now the brand URL `booboo.fractionalhq.uk` (was booboo-black.vercel.app); star ask after the scale flex. Verified 2026-08-02 by reading the pushed README on github.com/jessymariau/booboo, not the working tree. |
 
 ---
 

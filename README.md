@@ -8,7 +8,7 @@
 
 > Turn any AI system's data into one living, rooted 3D brain — **structure + knowledge + memory + agents + automations** fused into a single graph. Query it by **REST or MCP**, view it in your **browser or as a desktop wallpaper**, and **boot your agents from it in one call**.
 
-**See it before you install it → [booboo-black.vercel.app](https://booboo-black.vercel.app)** · a live brain in your browser, no signup, nothing to clone.
+**See it before you install it → [booboo.fractionalhq.uk](https://booboo.fractionalhq.uk)** · a live brain in your browser, no signup, nothing to clone.
 
 Named after a dachshund who never forgets where the treats are buried. Fitting, because Booboo is about exactly that: **memory and recall** — seeing the whole system at once, fetching what's buried, never losing the thread.
 
@@ -43,6 +43,8 @@ npx @booboo-brain/cli view --demo --nodes 1000000
 ```
 
 That's the headline flex: **a million nodes at 60fps in a browser tab.** Drop the count to `--nodes 50000` on a modest laptop. See [SCALE.md](SCALE.md) for how it holds up (one draw call over a single point cloud with a custom shader, plus tier-LOD on labels).
+
+If it holds up on your machine, [leave a star](https://github.com/jessymariau/booboo). There's no marketing behind this repo; stars are how the next builder finds it.
 
 **Then point it at your own stack:**
 

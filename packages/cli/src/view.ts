@@ -131,6 +131,8 @@ export async function view(opts: ViewOpts): Promise<void> {
     const url = `http://localhost:${opts.port}/${query}`;
     console.error(`🐾 booboo view · serving on http://localhost:${opts.port}`);
     console.error(`   → ${url}`);
+    // Demo mode only — the first-touch moment. A star ask on every daily `view` run would be nagging.
+    if (opts.demo) console.error("   liked the render? a star helps the next person find it → https://github.com/jessymariau/booboo");
     if (opts.open) openBrowser(url);
   });
 }
