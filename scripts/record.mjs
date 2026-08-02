@@ -31,6 +31,11 @@ if (!url || !base) { console.error("usage: record.mjs <url> <out-basename> [--w]
 const W = +flag("w", 720), H = +flag("h", 1280);
 const SECS = +flag("secs", 9), FPS = +flag("fps", 24);
 const SETTLE = +flag("settle", 12000), CRF = +flag("crf", 32);
+// --noloop: keep the arc instead of ping-ponging it. The reverse leg is right for
+// an ambient hero (no revolution to cut on, see above) but nonsense for a piece
+// that opens on the entrance sequence — it would rewind the reveal. --q raises
+// screencast JPEG quality; 92 bands visibly on this scene's dark gradients.
+const NOLOOP = args.includes("--noloop"), Q = +flag("q", 92);
 
 const frames = mkdtempSync(join(tmpdir(), "booboo-rec-"));
 const profile = join(frames, "profile");
@@ -75,7 +80,7 @@ onFrame = async (p) => {
   if (n < want) writeFileSync(join(frames, String(++n).padStart(5, "0") + ".jpg"), Buffer.from(p.data, "base64"));
   try { await S("Page.screencastFrameAck", { sessionId: p.sessionId }); } catch {}
 };
-await S("Page.startScreencast", { format: "jpeg", quality: 92, maxWidth: W, maxHeight: H, everyNthFrame: 1 });
+await S("Page.startScreencast", { format: "jpeg", quality: Q, maxWidth: W, maxHeight: H, everyNthFrame: 1 });
 await new Promise((r) => setTimeout(r, (SECS + 2) * 1000));
 await S("Page.stopScreencast");
 ws.close(); chrome.kill();
@@ -86,7 +91,9 @@ console.log(`captured ${n} frames`);
 mkdirSync(dirname(resolve(base)), { recursive: true });
 // Ping-pong, then encode twice. The reverse leg drops the first and last frame
 // so neither seam repeats a frame and stutters.
-const vf = `format=yuv420p,split[a][b];[b]reverse,trim=start_frame=1:end_frame=${n - 1},setpts=PTS-STARTPTS[r];[a][r]concat=n=2:v=1:a=0`;
+const vf = NOLOOP
+  ? "format=yuv420p"
+  : `format=yuv420p,split[a][b];[b]reverse,trim=start_frame=1:end_frame=${n - 1},setpts=PTS-STARTPTS[r];[a][r]concat=n=2:v=1:a=0`;
 const enc = (out, extra) => {
   const r = spawnSync(FFMPEG, [
     "-y", "-framerate", String(FPS), "-i", join(frames, "%05d.jpg"),
