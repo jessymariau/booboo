@@ -1,6 +1,6 @@
 {
   "name": "create-booboo",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Scaffold a new Booboo brain — `npx create-booboo my-brain`. Zero deps.",
   "license": "MIT",
   "repository": {
