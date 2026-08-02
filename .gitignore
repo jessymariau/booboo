@@ -22,3 +22,6 @@ shot_*.py
 web/dist/
 !examples/pemberton/pemberton.booboo.json
 !examples/pemberton/org.pemberton.booboo.json
+
+# Vercel CLI link (per-machine, never committed)
+.vercel
