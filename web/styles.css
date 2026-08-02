@@ -21,7 +21,11 @@
   --card-l: #fffefb;   /* tinted, never flat #fff */
   --ink: #1b1815;
   --ink-2: #6b6459;
-  --ink-3: #9a9287;
+  --ink-3: #746e64;        /* was #9a9287 = 2.93:1 on --paper, under AA. Now ~4.6:1. */
+  /* Brass reads at 2.32:1 on cream, so text and links on the light sections use
+     this darker cut (~4.7:1) while --gold stays exactly as-is for the dark
+     surfaces and the 3D scene, where CRAFT's luminance hierarchy depends on it. */
+  --gold-ink: #8b6a24;
   --rule: #e9e5df;
   --rule-2: #d9d3c9;
   --brass-l: #a9753a;
@@ -185,7 +189,10 @@ section { width: var(--gutter); margin-inline: auto; padding: clamp(4.5rem, 11vh
 
 .tag {
   font-family: var(--mono); font-size: .72rem; letter-spacing: .2em;
-  text-transform: uppercase; color: var(--brass-l); margin: 0 0 1.1rem;
+  /* --brass-l is 3.72:1 on cream, under AA. It stays untouched because it is
+     also the :focus-visible ring, where darkening it would cost visibility on
+     the dark surfaces. The section numbers take the darker cut instead. */
+  text-transform: uppercase; color: var(--gold-ink); margin: 0 0 1.1rem;
 }
 h2.display {
   font-family: var(--display);
@@ -355,7 +362,10 @@ h2.display em { font-style: italic; color: var(--brass-l); }
    viewport is unusable, so on small screens it becomes a still frame with
    an explicit "open it full-screen" hand-off rather than a broken toy. */
 @media (max-width: 760px) {
-  .topbar-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
+  /* Was: hide all but the last two, which dropped "The board" and "Ask it" —
+     i.e. both routes INTO the product, leaving only GitHub and npm on a phone.
+     Four short labels fit at 390 once the row is tightened. */
+  .topbar-links { gap: .85rem; font-size: .72rem; }
   .hero { min-height: 92svh; }
   .board-frame iframe { height: 26rem; }
   .board-cap { font-size: .72rem; }
@@ -387,3 +397,14 @@ h2.display em { font-style: italic; color: var(--brass-l); }
 .cta-row { display: flex; flex-wrap: wrap; gap: .85rem; margin-top: 1.6rem; }
 .letters-embed { margin-top: 1.8rem; }
 .letters-embed iframe { width: 100%; max-width: 480px; height: 150px; border: 1px solid var(--rule-2); border-radius: 10px; background: #fff; }
+
+@media (max-width: 760px) {
+  /* On a phone the recorded house sits directly behind the lede and its light
+     shafts run through six lines of body copy. GAPS C9 logged the overlap and
+     left it open. A scrim behind the copy only — not over the whole hero — keeps
+     the graph visible while giving the words a ground to sit on. */
+  .hero-copy {
+    background: radial-gradient(120% 80% at 20% 45%, rgba(6,8,14,.86) 0%, rgba(6,8,14,.62) 55%, rgba(6,8,14,0) 100%);
+    padding: 1.2rem 1rem 1.4rem; margin-left: -1rem; margin-right: -1rem;
+  }
+}

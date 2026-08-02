@@ -78,7 +78,7 @@
     // painted underneath, so the failure mode is a still image and not a hole.
     stage.appendChild(v);
     drop(frame);
-    if (claim) claim.textContent = "This is it turning — recorded from the same graph you can open below.";
+    if (claim) claim.textContent = "This is it turning: recorded from the same graph you can open below.";
   } else {
     // The hero is the Pemberton Grand — 2,414 nodes, readable on any GPU tier.
     // Scale proves itself behind the proof link; comprehension is the front door.

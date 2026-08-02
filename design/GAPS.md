@@ -283,3 +283,32 @@ the row it closes.
 Tier 1 is why this file exists: three items that were specified, assumed
 done, and never built. Tier 2 is the same insight as before — **we built the
 machine and never wrote the label.**
+
+---
+
+## A11Y — measured for the first time 2026-08-02
+
+This file had **no accessibility row at all** until now, which was itself the
+finding: every other axis here is evidence-backed and this one had never been
+looked at. It is now a committed, re-runnable check — `node scripts/a11y.mjs`.
+
+| Item | State | Evidence |
+|---|---|---|
+| Semantics | ✅ | `lang=en`, title, `main`/`nav`/`header` on all three surfaces, one `h1` on the landing, zero heading-level skips, zero images missing `alt`. |
+| Control naming | ✅ | **Zero unnamed controls across 146 focusables.** Genuinely good and worth not regressing. |
+| Reduced motion | ✅ | Honoured across entrance, law overlay, health lamps, count-ups (C20, C9); mobile hero serves a still poster, never autoplaying video. |
+| Landing contrast | 🟡 | Was 17 failures at both 1440×900 and 390×844. Fixed the two tokens carrying most of them: `--ink-3` #9a9287 → #746e64 (2.93:1 → ~4.6) and a new `--gold-ink` #8b6a24 (~4.7) for text on cream, because `--gold` is 2.32:1 there. `.tag` retargeted. **Now 7 desktop / 13 mobile.** `--brass-l` deliberately untouched: it is also the `:focus-visible` ring and darkening it would cost visibility on the dark surfaces. |
+| Board contrast | 🔴 | **204 failures, untouched.** The panel has its own stylesheet (`packages/panel/app/panel.css`) with its own tokens, so the landing fix does not reach it. Worst is the brand mark itself, "The Pemberton Grand", at 2.57:1. |
+| Board 9–10px labels | 🔴 | The rank labels (`I The standard` … `IV Staff & machines`) and the drag hint sit at 9–10px **over a background image**, so contrast cannot be computed at all — not merely low, unknown. Also breaks CRAFT's own ratified scale, which starts at 11. |
+| `/chart/` has no `h1` | 🔴 | `h1Count = 0`. Screen-reader users get no document title in the heading structure. |
+| Hit areas | 🔴 | WCAG 2.5.8 wants 24×24. Landing nav/footer links are 16–21px tall; board `.oc-mac` buttons are 141×16–22. |
+| Hero iframe | ✅ | Was an empty `title` with no `aria-hidden`, so it announced as an unlabelled frame. Now `aria-hidden="true"`. |
+
+**The trade this axis turns on, stated so nobody flattens it by accident:** CRAFT
+§1 is a luminance hierarchy that *deliberately* pushes secondary text down so
+flags stay the brightest thing in frame, and that hierarchy is the best thing
+about this design. Lifting every muted value to 4.5:1 would destroy exactly what
+CRAFT exists to protect. The rule applied here, and the one to keep applying:
+**lift text that carries meaning or action; leave decorative dimness alone and
+say plainly that it fails AA.** The remaining 7 landing failures are that
+deliberate residue. The board's 204 are not, and are real work.
