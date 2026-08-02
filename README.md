@@ -99,6 +99,7 @@ Your agent can now query the whole system — `search`, `neighbors`, `path`, `st
 | Tool | What it does |
 |---|---|
 | `booboo_stats` | Node/link counts for the whole graph, broken down by layer. |
+| `booboo_count` | Counts alone, without pulling the payload — use when sizing a query. |
 | `booboo_search` | Search nodes by label or id (ranked: exact > prefix > substring). Use this first to find a node's id. |
 | `booboo_node` | Fetch a single node (all fields + data) by its exact id. |
 | `booboo_neighbors` | The neighbourhood around a node: connected nodes + links out to `depth` hops. |
