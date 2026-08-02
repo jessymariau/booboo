@@ -1,6 +1,6 @@
 {
   "name": "@booboo-brain/cli",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "mcpName": "io.github.jessymariau/booboo",
   "description": "Booboo CLI — one `booboo` command: build | serve | mcp | view | panel. Lazy-loads each subcommand so a build-only run never pulls the server or viewer.",
   "license": "MIT",

@@ -1,5 +1,11 @@
 # create-booboo
 
+## 0.5.2
+
+### Patch Changes
+
+- 623cc7c: A one-line GitHub star ask at the two entry commands, placed where the product has just proved itself: the end of the `create-booboo` scaffold output, and `booboo view` in `--demo` mode only — daily snapshot users are never nagged.
+
 ## 0.5.1
 
 ### Patch Changes
