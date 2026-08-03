@@ -162,6 +162,17 @@ const FRAG = /* glsl */ `
       float a2 = atan(e.y, e.x);
       lum = exp(-rr * rr * 420.0) * 1.7 + exp(-rr * rr * 16.0) * 0.40
           + pow(max(0.0, cos(a2 * 7.0)), 28.0) * exp(-rr * rr * 7.0) * 0.5 * detail;
+      // gl_PointCoord spans exactly the sprite's quad, so anything still emitting
+      // at rr = 0.5 gets sliced off SQUARE. Every other kind self-limits — the
+      // bells discard outside their silhouette, the written marks are tight — but
+      // the root is the one sprite with a wide radial halo and rays, and both are
+      // far above the 0.004 discard floor when they reach the edge (the rays hit
+      // it at ~0.09). The result was a hard rectangle with squared corners around
+      // the brightest object in the frame, which is the first thing any eye goes
+      // to. Retuning the falloffs to die inside the quad would shorten the rays
+      // and change the artwork, so window it instead: the shape is untouched and
+      // the light now ends in the water rather than on an edge.
+      lum *= 1.0 - smoothstep(0.30, 0.50, rr);
     } else {                                  // agent — the bell
       float hw = bellHalf(t); if (hw <= 5e-4) discard;
       float q = abs(p.x) / hw; if (q >= 1.05) discard;
@@ -224,7 +235,18 @@ function Field({ laid, cfg, onPick, focus, introUni }: { laid: Laid; cfg: Booboo
     // dust rather than a floor. The fix is presence per point, not more spread —
     // spreading the same count over a wider area is what made it dust in the
     // first place.
-    const TIER = [7.4, 4.3, 1.9, 1.7];
+    //
+    // Tier 2 lifted 1.9 → 2.9, and this one is arithmetic rather than taste. The
+    // fragment shader gives up on artwork below 9px (`smoothstep(9.0, 20.0, vPx)`)
+    // and falls back to the two-pixel family mark. At 1.9 a typical mid-band node
+    // (weight ~0.3, so laid size ~9.2) reached the framing distance at 9.3px —
+    // landing ON the cliff, detail ≈ 0.02, which is the fallback in all but name.
+    // So "the mid-band bells are sparse" was never about how many there are: the
+    // bells were being drawn as ticks. 2.9 puts them at ~14px, detail ≈ 0.4, far
+    // enough up the ramp to read as their own form while staying clearly smaller
+    // than a tier-1 head. Anything that changes framing distance or the weight
+    // curve moves this cliff, so check vPx before re-tuning by eye.
+    const TIER = [7.4, 4.3, 2.9, 1.7];
     const sizeArr = new Float32Array(laid.count);
     const kindArr = new Float32Array(laid.count);
     for (let i = 0; i < laid.count; i++) {
