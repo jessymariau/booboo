@@ -32,7 +32,18 @@ export async function launch({ width = 1200, height = 630, dpr = 1, motion = fal
         "--disable-dev-shm-usage",
         "--hide-scrollbars",
         ...(motion ? [] : ["--force-prefers-reduced-motion"]),
-        "--enable-gpu", "--use-gl=angle", "--use-angle=gl-egl",
+        // THE ANGLE BACKEND IS A VERIFICATION VARIABLE, SO IT IS OVERRIDABLE.
+        // gl-egl was pinned for headless stability, so every capture this project
+        // has ever taken — shot, check-golden, capture, film, record — ran on it,
+        // while real Chrome on Windows reports "ANGLE (NVIDIA ... Direct3D11,
+        // D3D11)". That divergence was worth closing on principle, and it was the
+        // fourth suspect for the 2026-08-03 defect where the node field and the
+        // flags do not draw in Jesse's real Chrome. IT IS NOT THE CAUSE: gl-egl
+        // and d3d11 render this scene IDENTICALLY and CORRECTLY here, verified
+        // side by side at 1600x1000. Keep the flag anyway — a headless check that
+        // cannot switch to the backend visitors use is a check with a blind spot,
+        // and this one cost hours to rule out. BOOBOO_ANGLE=d3d11 to switch.
+        "--enable-gpu", "--use-gl=angle", "--use-angle=" + (process.env.BOOBOO_ANGLE || "gl-egl"),
         "--window-size=" + width + "," + height,
         "about:blank",
       ], { stdio: ["ignore", "ignore", "pipe"] });
