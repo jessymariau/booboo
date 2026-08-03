@@ -105,15 +105,29 @@ a { color: inherit; }
    and let the copy sit high, which is the same hook-then-label order the page
    uses everywhere else. */
 @media (max-width: 720px) {
-  .stage video, .stage.still::after { transform: translateY(11%); }
+  /* The direction-C loop is composed FOR this frame — apex at ~24%, floor at
+     55-85%, and its own black headroom above — so the 11% push that used to
+     drop the old small blob into the space under the CTAs now slides the floor
+     into the cream hand-off and buries the apex deeper under the headline. The
+     recording does the placement now; the transform was standing in for a
+     composition it no longer has to fix. */
+  .stage video, .stage.still::after { transform: none; }
   .hero-copy { margin: 0 0 auto; padding-top: 4vh; }
   /* and hold the cream hand-off back to the last tenth. At the desktop stops
      it washes out the bottom 28% of the frame, which on a phone is exactly
-     where the house now sits — the fade was eating the thing it frames. */
+     where the house now sits — the fade was eating the thing it frames.
+     The centre radial is the one that had to give. On desktop it sits at 20%,
+     behind the copy, leaving the cosmos its own half of the frame; a phone's
+     copy runs full width, so the same darkener at 50%/45% lands squarely on the
+     brightest part of the house. Stacked on the linear it was taking ~63% out
+     of the one thing the hero exists to show, which the old loop survived only
+     because it was a small dim blob. At .20 the compound is ~43%: the bells,
+     the filaments and the red alarm all read, and the cream serif still holds
+     its contrast over them. */
   .vignette {
     background:
       linear-gradient(to bottom, rgba(6,8,14,.72) 0%, rgba(6,8,14,.30) 30%, rgba(6,8,14,.34) 84%, var(--paper) 100%),
-      radial-gradient(120% 80% at 50% 45%, rgba(6,8,14,.45), transparent 72%);
+      radial-gradient(120% 80% at 50% 45%, rgba(6,8,14,.20), transparent 72%);
   }
 }
 .stage.still::after {

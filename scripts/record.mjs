@@ -3,22 +3,28 @@
 //
 //   node scripts/record.mjs <url> <out-basename> [--w 720] [--h 1280]
 //                           [--secs 9] [--fps 24] [--settle 12000] [--crf 32]
+//                           [--crop w:h:x:y]
 //
 // Why this exists: the mobile hero is a PRE-RENDERED LOOP, not live WebGL
 // (GOALS G1). That decision closes three holes at once — mobile has no cosmos
 // at all today, a weak GPU deep-linking the viewer is unguarded (GAPS C7), and
 // the landing otherwise runs a second WebGL context purely for decoration.
 //
-// The loop is built by PING-PONG, and that is forced rather than chosen. The
-// scene's own turn rate is a sum of incommensurate sines (`Spin` in
-// Booboo.tsx: 0.065 + .085·sin(.047t) + .05·sin(.019t) + .025·sin(.101t)), so
-// it never returns to its start — there is no revolution to cut on. Forward
-// then reversed is seamless by construction, and at ~0.07 rad/s no viewer can
-// tell which direction is "real".
+// The loop and the crop are both in lib/vf.mjs, shared with film.mjs.
+//
+// KNOW BEFORE YOU REACH FOR THIS: screencast is compositor-throttled, and the
+// ceiling is a function of frame area. Measured on this scene: 720x1280 keeps up
+// at 24fps, 1638x1280 delivers 8.4. Since the hero crop wants the wide composed
+// aspect (see lib/vf.mjs), that puts the redesigned hero OUT of this script's
+// reach and into film.mjs, which drives virtual time and is exact at any size.
+// The frame-count guard below is what tells you which side of the line you are
+// on — do not lower --fps to satisfy it, or the loop plays back at the wrong
+// speed and looks like a scene that drifts too fast.
 import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
+import { chain } from "./lib/vf.mjs";
 
 const CHROME = process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const FFMPEG = process.env.FFMPEG_PATH || "ffmpeg";
@@ -36,6 +42,9 @@ const SETTLE = +flag("settle", 12000), CRF = +flag("crf", 32);
 // that opens on the entrance sequence — it would rewind the reveal. --q raises
 // screencast JPEG quality; 92 bands visibly on this scene's dark gradients.
 const NOLOOP = args.includes("--noloop"), Q = +flag("q", 92);
+// --crop w:h:x:y — see lib/vf.mjs. Also applied to the poster, which is
+// otherwise the one uncropped frame in the set.
+const CROP = flag("crop");
 
 const frames = mkdtempSync(join(tmpdir(), "booboo-rec-"));
 const profile = join(frames, "profile");
@@ -89,11 +98,7 @@ if (n < want * 0.6) throw new Error(`only ${n}/${want} frames — the scene is p
 console.log(`captured ${n} frames`);
 
 mkdirSync(dirname(resolve(base)), { recursive: true });
-// Ping-pong, then encode twice. The reverse leg drops the first and last frame
-// so neither seam repeats a frame and stutters.
-const vf = NOLOOP
-  ? "format=yuv420p"
-  : `format=yuv420p,split[a][b];[b]reverse,trim=start_frame=1:end_frame=${n - 1},setpts=PTS-STARTPTS[r];[a][r]concat=n=2:v=1:a=0`;
+const vf = chain({ crop: CROP, loopFrames: NOLOOP ? 0 : n });
 const enc = (out, extra) => {
   const r = spawnSync(FFMPEG, [
     "-y", "-framerate", String(FPS), "-i", join(frames, "%05d.jpg"),
@@ -107,7 +112,8 @@ enc(base + ".webm", ["-c:v", "libvpx-vp9", "-crf", String(CRF + 4), "-b:v", "0",
 // Poster: the video cannot paint before it loads, and a black rectangle behind
 // the headline for even half a second is the exact "handed a black rectangle"
 // failure the guard in main.js exists to prevent.
-spawnSync(FFMPEG, ["-y", "-i", join(frames, "00001.jpg"), "-q:v", "6", resolve(base + ".jpg")], { stdio: "ignore" });
+spawnSync(FFMPEG, ["-y", "-i", join(frames, "00001.jpg"),
+  ...(CROP ? ["-vf", "crop=" + CROP] : []), "-q:v", "6", resolve(base + ".jpg")], { stdio: "ignore" });
 console.log(base + ".jpg");
 
 rmSync(frames, { recursive: true, force: true });
