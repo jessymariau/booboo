@@ -1,0 +1,62 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/dist/mcpb-manifest.schema.json",
+  "manifest_version": "0.3",
+  "name": "booboo",
+  "display_name": "Booboo",
+  "version": "__VERSION__",
+  "description": "Query your AI system's wiring, knowledge, memory, agents and crons as one rooted graph over MCP.",
+  "long_description": "Booboo turns a scattered AI system into one rooted graph an agent can actually query. Point it at a snapshot built by `booboo build` and it answers the questions that otherwise cost a human an afternoon: what feeds what, which cron owns this table, what did we decide about X and when, which agent is responsible for this surface.\n\nIt is also writable. With a journal beside the snapshot, agents can record decisions and reports as they work, and replay them on the next boot — so the graph is a live memory rather than a static export.\n\nOpen-core, MIT licensed. Build a snapshot with `npx create-booboo`.",
+  "author": {
+    "name": "Jessy Mariau",
+    "url": "https://fractionalhq.uk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jessymariau/booboo"
+  },
+  "homepage": "https://github.com/jessymariau/booboo#readme",
+  "documentation": "https://github.com/jessymariau/booboo#readme",
+  "support": "https://github.com/jessymariau/booboo/issues",
+  "license": "MIT",
+  "keywords": ["knowledge-graph", "memory", "agents", "observability", "wiring"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.mjs"],
+      "env": {
+        "BOOBOO_SNAPSHOT": "${user_config.snapshot}",
+        "BOOBOO_ORG": "${user_config.org}",
+        "BOOBOO_READONLY": "${user_config.readonly}"
+      }
+    }
+  },
+  "user_config": {
+    "snapshot": {
+      "type": "file",
+      "title": "Booboo snapshot",
+      "description": "The graph.json produced by `booboo build`. Scaffold one with `npx create-booboo`.",
+      "required": true
+    },
+    "org": {
+      "type": "file",
+      "title": "Organigram (optional)",
+      "description": "An org.booboo.json file. Supplying it adds the booboo_boot and booboo_org tools, so agents boot from the org tree.",
+      "required": false
+    },
+    "readonly": {
+      "type": "boolean",
+      "title": "Read-only",
+      "description": "Leave off to let agents record decisions and reports into the journal beside your snapshot. Turn on to expose query tools only.",
+      "required": false,
+      "default": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18"
+    }
+  }
+}
