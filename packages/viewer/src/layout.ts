@@ -150,8 +150,34 @@ export function layout(g: BoobooGraph): Laid {
       const pull = tier <= 0 ? 0.15 : tier === 1 ? 0.45 : tier === 2 ? 0.8 : 1;
       const lr = sr * pull * (0.15 + 0.85 * Math.sqrt(hash(nd.id + "r")));
       const la = hash(nd.id + "a") * Math.PI * 2;
-      x = cx + Math.cos(la) * lr;
-      y = cy + Math.sin(la) * lr * 0.92;
+      // MOUND, NOT A STACK OF EQUAL DISCS (2026-08-03, direction C).
+      //
+      // Cluster centroids are computed ONCE per cluster, not per layer, so every
+      // band used to sit at the same radius and a cluster read as a VERTICAL
+      // COLUMN through the stack — which is what the original layout says it
+      // wants. The visible consequence, once the deep field was actually drawn,
+      // was 2,111 ledger nodes bunched into little halos directly beneath their
+      // own department head, scattered across the frame. Never a mass.
+      //
+      // C's silhouette is a mound: almost nothing at the apex, fanning wider and
+      // denser with every band, so the deepest layer is one continuous shelf.
+      // Scaling BOTH the centroid and the local scatter by depth gets that in one
+      // move, and keeps the semantics honest — a department's children still fan
+      // out directly below it, they just spread as they descend instead of
+      // stacking. The exponent shapes the flare: below 1 opens early and keeps
+      // the lower bands generous, which is what makes the base read as a floor
+      // rather than a cone.
+      const depth = nLayers > 1 ? li / (nLayers - 1) : 1;
+      const spread = 0.08 + 0.92 * Math.pow(depth, 0.75);
+      // MELD: the fan alone still left every cluster as its own tidy halo, so the
+      // deepest band read as a dozen separate swarms rather than one floor. A
+      // cluster's footprint has to grow faster than the gap to its neighbour, so
+      // the bottom bands BLEED INTO EACH OTHER and become continuous. Upper bands
+      // are untouched (depth^1.5 is ~0 there) and stay legible as distinct
+      // departments, which is the part that still has to be readable.
+      const meld = 1 + 2.6 * Math.pow(depth, 1.5);
+      x = (cx + Math.cos(la) * lr * meld) * spread;
+      y = (cy + Math.sin(la) * lr * meld * 0.92) * spread;
       // Thin Z jitter keeps each band a crisp shelf (was ±45; ±20 reads sharper).
       z = pz + (hash(nd.id + "z") - 0.5) * 40;
     }
@@ -163,14 +189,31 @@ export function layout(g: BoobooGraph): Laid {
     if (Math.abs(y) > bounds) bounds = Math.abs(y);
 
     const col = nd.color ? hex2rgb(nd.color) : layerColor[nd.layer] ?? [0.7, 0.7, 0.7];
-    // tier-dim (from the Atlas): deep-tier noise recedes, structure lifts — the graph reads at scale.
-    const dim = (nd.tier ?? 2) >= 3 ? 0.34 : (nd.tier ?? 2) === 2 ? 0.6 : 1.05;
+    // TIER-DIM, INVERTED 2026-08-03 (Jesse ratified redesign direction C).
+    //
+    // This line used to read `>= 3 ? 0.34 : === 2 ? 0.6 : 1.05` under the rule
+    // "deep-tier noise recedes, structure lifts". That was coherent for the old
+    // look, where a few brass landmarks were the subject and the 2,111 ledger
+    // nodes were background. It is the opposite of what the new direction is:
+    // the deep field IS the subject — a dense luminous seabed of thousands of
+    // points, with delicate forms above it — and the mass belongs at the bottom.
+    //
+    // Worth saying plainly because it explains why months of tuning never got
+    // there: the deep field was not badly drawn, it was deliberately suppressed
+    // by 3x in brightness and ~4x in size. No amount of material work on the
+    // beams could fix a composition that had been inverted on purpose.
+    const tier = nd.tier ?? 2;
+    const dim = tier >= 3 ? 1.0 : tier === 2 ? 0.86 : 1.05;
     colors[i * 3] = col[0] * dim;
     colors[i * 3 + 1] = col[1] * dim;
     colors[i * 3 + 2] = col[2] * dim;
 
+    // Size: weight SQUARED made the apex enormous and the floor invisible. The
+    // seabed wants thousands of small-but-present points, so the floor rises and
+    // the exponent softens. Landmarks (tier<=1) are zeroed out of this cloud and
+    // drawn as meshes, so raising the floor costs the apex nothing.
     const w = nd.weight ?? 0.3;
-    sizes[i] = 3.5 + w * w * 46; // apex big, noise small
+    sizes[i] = 6.5 + w * w * 30;
   }
 
   // links — one buffer, dangling dropped

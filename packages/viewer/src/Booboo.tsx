@@ -53,7 +53,15 @@ const VERT = /* glsl */ `
   uniform float uT; uniform float uZTop; uniform float uZSpan;
   varying vec3 vColor; varying float vFade; varying float vPx;
   void main() { vColor = color * (0.45 + 0.55 * focus); vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    float px = size * (340.0 / -mv.z) * (0.8 + 0.26 * focus); // dimmed points also recede in size
+    // 340.0 was starving the deep field into nothing. At the framing distance
+    // this scene actually uses (~2200 units) a ledger node came out UNDER ONE
+    // PIXEL, so 2,111 of the graph's 2,839 nodes were mathematically present and
+    // visually absent — which read as "the deep tiers are dim" and sent two
+    // passes chasing brightness and colour that were never the problem.
+    // Landmarks are meshes and scale correctly, so only the point cloud starved.
+    // Clamped at the top end because the same constant, once large enough to be
+    // seen far away, turns every near point into a blob on approach.
+    float px = min(size * (1100.0 / -mv.z) * (0.8 + 0.26 * focus), 30.0);
     gl_PointSize = px; vPx = px;
     // entrance: the field wakes top-down after the spines (start 1.8s, wave 1.2s + 0.6s ease)
     float intro = clamp((uT - 1.8 - ((uZTop - position.z) / uZSpan) * 1.2) / 0.6, 0.0, 1.0);
@@ -217,7 +225,7 @@ function Flags({ flags, onSelect, introBox, reduced }: { flags: Flagged[]; onSel
 const SPINE_VERT = /* glsl */ `
   attribute float aT; attribute vec3 aNormal; attribute vec3 aColor;
   uniform float uT; uniform float uZTop; uniform float uZSpan;
-  varying float vT; varying vec3 vColor; varying vec3 vNormal; varying vec3 vViewDir; varying float vIntro;
+  varying float vT; varying vec3 vColor; varying vec3 vNormal; varying vec3 vViewDir; varying float vIntro; varying vec3 vObj;
   // GLSL normalize() on a near-zero vector is 0/0 = NaN (unlike three.js's
   // JS-side Vector3.normalize, which guards it) — one NaN fragment here fed
   // Bloom's mip blur and washed the entire frame white. Never trust normalize()
@@ -225,6 +233,7 @@ const SPINE_VERT = /* glsl */ `
   vec3 safeNormalize(vec3 v) { float l = length(v); return l > 0.0001 ? v / l : vec3(0.0, 1.0, 0.0); }
   void main() {
     vT = aT; vColor = aColor; vNormal = safeNormalize(normalMatrix * aNormal);
+    vObj = position;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     vViewDir = safeNormalize(-mv.xyz);
     // ignite top-down, source-first (CRAFT §3: "1.2s spines ignite top-down —
@@ -234,9 +243,10 @@ const SPINE_VERT = /* glsl */ `
     gl_Position = projectionMatrix * mv;
   }`;
 const SPINE_FRAG = /* glsl */ `
-  precision mediump float;
+  precision highp float;
   uniform float uTime; uniform float uDrift; uniform float uIntensity;
-  varying float vT; varying vec3 vColor; varying vec3 vNormal; varying vec3 vViewDir; varying float vIntro;
+  varying float vT; varying vec3 vColor; varying vec3 vNormal; varying vec3 vViewDir; varying float vIntro; varying vec3 vObj;
+  float hash13(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
   void main() {
     // fresnel: the beam's silhouette catches light, its face stays a whisper —
     // a cone reads as a shaft of light, not a solid pipe. vNormal/vViewDir are
@@ -245,9 +255,25 @@ const SPINE_FRAG = /* glsl */ `
     float fresnel = pow(1.0 - clamp(dot(vNormal, vViewDir), 0.0, 1.0), 2.2);
     // gradient alpha: dense at the source (parent, t=0), diffusing as it falls.
     float grad = pow(1.0 - clamp(vT, 0.0, 1.0), 1.6);
-    // animated grain drifting downward — dust in a light shaft, not a texture.
-    float grain = 0.55 + 0.45 * sin((vT * 26.0 - uTime * uDrift) * 6.2831853);
-    float a = (0.10 + grad * 0.34) * (0.4 + fresnel * 0.9) * (0.6 + grain * 0.4) * uIntensity * vIntro;
+    // Dust in a light shaft. The previous line claimed to be exactly that and
+    // was the opposite: ONE sine at a fixed 26 cycles, ±45%, depending only on
+    // vT — so every beam in the scene banded at the same places, in phase, with
+    // hard regular edges. That is corduroy, and close up it made the brass
+    // beams read as corrugated cardboard and the sheaves as striped drinking
+    // straws (Jesse, 2026-08-03: "our own graph looks childish"). A texture is
+    // regular; motes are not.
+    //
+    // Three things fix it and all three are necessary. A PER-BEAM PHASE from a
+    // hash of the (coarsely quantised) object position, so beams stop banding
+    // together. TWO incommensurate frequencies, so the pattern never repeats
+    // along a shaft. And an amplitude of ±11% rather than ±45%, because the
+    // grain is meant to be felt, not read. highp because the higher frequency
+    // aliases into visible steps under mediump.
+    float seed = hash13(floor(vObj * 0.05));
+    float d1 = sin((vT * 173.0 + seed * 61.0 - uTime * uDrift * 2.6) * 6.2831853);
+    float d2 = sin((vT * 67.0 - seed * 23.0 - uTime * uDrift * 1.3) * 6.2831853);
+    float grain = 0.89 + 0.11 * (d1 * 0.55 + d2 * 0.45);
+    float a = (0.10 + grad * 0.34) * (0.4 + fresnel * 0.9) * grain * uIntensity * vIntro;
     gl_FragColor = vec4(vColor * (1.15 + fresnel * 0.6), a);
   }`;
 
