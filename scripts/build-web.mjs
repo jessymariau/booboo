@@ -69,6 +69,19 @@ await writeFile(
   path.join(out, "vercel.json"),
   JSON.stringify(
     {
+      // This deploy root carries a package.json (deps for the function) but NO
+      // lockfile — it is generated, not a workspace. Vercel's default
+      // `pnpm install --frozen-lockfile` therefore fails the build outright
+      // ("Command exited with 1") the moment it cannot reuse a previous cache.
+      // Pin the install to npm, which is happy to resolve two pinned deps
+      // without a lockfile.
+      installCommand: "npm install --no-audit --no-fund",
+      // web/dist is ALREADY BUILT — that is the whole point of this script. The
+      // Vercel project's own build command assumes a repo-root deploy
+      // ("pnpm -F @booboo-brain/viewer build && ... && node scripts/build-web.mjs")
+      // and there is no monorepo inside the deploy root, so it exits 1. An empty
+      // buildCommand overrides the project setting and ships the static tree.
+      buildCommand: "",
       functions: {
         "api/mcp.mjs": { maxDuration: 60, includeFiles: "api/_data/**" },
         "api/panelapi.mjs": { maxDuration: 30, includeFiles: "api/_data/**" },

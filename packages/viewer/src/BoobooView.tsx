@@ -196,6 +196,47 @@ export function BoobooView({
   // starting frame, not a lock).
   const [activePreset, setActivePreset] = useState<string | null>("overview");
 
+  /* ── host bridge ──
+     `?cfg=` only lands once, at load, which is fine for a bookmark and useless
+     for an embed that wants to CHANGE as the page scrolls. Re-pointing the
+     iframe src would remount the whole scene and flash a WebGL re-init on every
+     beat, so the host needs to talk to a viewer that is already running.
+
+     A host posts { type: "booboo:cfg", cfg: Partial<BoobooCfg> } and it merges
+     through the same mergeCfg the URL and the drawer use — so `peel` spreads the
+     layer shells apart, `layers` isolates a band, and a page can walk down
+     through the graph explaining one layer at a time.
+
+     ORIGIN IS CHECKED FIRST. `message` fires for ANY page that frames us, so an
+     unguarded listener would hand every embedder a remote control over the
+     viewer. Allowlist only. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ALLOWED = [
+      /^https:\/\/([a-z0-9-]+\.)*fractionalhq\.uk$/,
+      /^https:\/\/([a-z0-9-]+\.)*framer\.(com|app|website)$/,
+      /^http:\/\/localhost(:\d+)?$/,
+    ];
+    const onMessage = (e: MessageEvent) => {
+      if (!ALLOWED.some((re) => re.test(e.origin))) return;
+      const m = e.data as { type?: string; cfg?: Partial<BoobooCfg> } | null;
+      if (!m || m.type !== "booboo:cfg" || !m.cfg) return;
+      setCfg((prev) => mergeCfg(prev, m.cfg as Partial<BoobooCfg>));
+      setActivePreset(null); // the host is driving now; no preset is "active"
+    };
+    window.addEventListener("message", onMessage);
+    // Tell the host we are listening, so it does not post into the void while
+    // the scene is still booting.
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "booboo:ready" }, "*");
+      }
+    } catch {
+      /* cross-origin parent that refuses postMessage — nothing to do */
+    }
+    return () => window.removeEventListener("message", onMessage);
+  }, [setCfg]);
+
   const byId = useMemo(() => new Map(data.nodes.map((n) => [n.id, n])), [data]);
 
   // semantic adjacency for the dossier — structural spines excluded so the verb
