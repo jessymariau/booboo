@@ -18,14 +18,19 @@ const CHROME_CANDIDATES = [
   "/usr/bin/chromium",
 ].filter(Boolean);
 
-export async function launch({ width = 1200, height = 630, dpr = 1, motion = false, touch = false } = {}) {
+// headed:true launches a REAL VISIBLE WINDOW. Headless is always "visible" to
+// document.visibilityState, but it is not the path a visitor runs: a headless
+// tab never gets occluded, never loses focus and never has rAF throttled by the
+// compositor. The 2026-08-03 defect lived precisely in that gap, so the driver
+// has to be able to open the window a person actually looks at.
+export async function launch({ width = 1200, height = 630, dpr = 1, motion = false, touch = false, headed = false } = {}) {
   const profile = resolve(tmpdir(), "booboo-cdp-" + process.pid + "-" + Math.floor(performance.now()));
   let chrome, wsUrl, lastErr;
 
   for (const bin of CHROME_CANDIDATES) {
     try {
       chrome = spawn(bin, [
-        "--headless=new",
+        ...(headed ? [] : ["--headless=new"]),
         "--remote-debugging-port=0",
         "--user-data-dir=" + profile,
         "--no-sandbox",                 // CI containers run as root
@@ -89,6 +94,8 @@ export async function launch({ width = 1200, height = 630, dpr = 1, motion = fal
   const S = (m, p) => send(m, p, sessionId);
 
   await S("Page.enable");
+  // A new target opens as a background tab, and a background tab has no rAF.
+  if (headed) await S("Page.bringToFront");
   await S("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: dpr, mobile: touch });
   if (touch) {
     await S("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
