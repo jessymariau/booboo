@@ -215,6 +215,11 @@ export function BoobooView({
     const ALLOWED = [
       /^https:\/\/([a-z0-9-]+\.)*fractionalhq\.uk$/,
       /^https:\/\/([a-z0-9-]+\.)*framer\.(com|app|website)$/,
+      // Framer PREVIEWS the page inside project-<id>.framercanvas.com, not on
+      // framer.com. Miss this and the guard silently drops every message from
+      // the editor — the embed looks alive (it has its own idle orbit) while
+      // ignoring the host completely, which reads as "the bridge does nothing".
+      /^https:\/\/([a-z0-9-]+\.)*framercanvas\.com$/,
       /^http:\/\/localhost(:\d+)?$/,
     ];
     const onMessage = (e: MessageEvent) => {
