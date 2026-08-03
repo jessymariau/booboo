@@ -41,7 +41,11 @@ export function defaultCfg(data: BoobooGraph): BoobooCfg {
   // the brightest thing in frame after the flags, which inverts the luminance
   // ladder (CRAFT §1) for pure decoration. The engraved floor already says
   // where the band is. Kept as a flag, not removed: BoobooCfg is published API.
-  return { orbit: 1, drift: 1, lines: 0.15, flow: 1, nodeScale: 1, sizes, layers, platforms: true, rings: false, labels: true, bloom: 0, cinematic: 1, fog: 0, peel: 1.2, spines: 1 };
+  // Defaults are the ratified direction, not the old look: no platform discs, no
+  // in-space layer typography, no light-shaft spines, no blob nebula. A layer is
+  // now expressed by depth, density and colour alone — reintroducing discs to
+  // make bands legible is how the previous design comes back through the door.
+  return { orbit: 1, drift: 1, lines: 0.28, flow: 1.1, nodeScale: 1, sizes, layers, platforms: false, rings: false, labels: false, bloom: 0.75, cinematic: 1, fog: 0, peel: 1.6, spines: 0 };
 }
 
 // ── node cloud: one draw call, per-point size + color from typed-array attributes ──
@@ -49,10 +53,10 @@ export function defaultCfg(data: BoobooGraph): BoobooCfg {
 // appears on large (landmark-scale) sprites, and a depth fade so the far field recedes.
 // The sprite carries its own glow — the de-bloomed default look needs no postprocessing.
 const VERT = /* glsl */ `
-  attribute float size; attribute vec3 color; attribute float focus;
+  attribute float size; attribute vec3 color; attribute float focus; attribute float aKind;
   uniform float uT; uniform float uZTop; uniform float uZSpan;
-  varying vec3 vColor; varying float vFade; varying float vPx;
-  void main() { vColor = color * (0.45 + 0.55 * focus); vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  varying vec3 vColor; varying float vFade; varying float vPx; varying float vKind;
+  void main() { vColor = color * (0.45 + 0.55 * focus); vKind = aKind; vec4 mv = modelViewMatrix * vec4(position, 1.0);
     // 340.0 was starving the deep field into nothing. At the framing distance
     // this scene actually uses (~2200 units) a ledger node came out UNDER ONE
     // PIXEL, so 2,111 of the graph's 2,839 nodes were mathematically present and
@@ -61,22 +65,104 @@ const VERT = /* glsl */ `
     // Landmarks are meshes and scale correctly, so only the point cloud starved.
     // Clamped at the top end because the same constant, once large enough to be
     // seen far away, turns every near point into a blob on approach.
-    float px = min(size * (1100.0 / -mv.z) * (0.8 + 0.26 * focus), 30.0);
+    // Cap raised from 30 to 190: every node is now drawn by this one sprite
+    // system, landmarks included, so the ceiling has to allow a root or an agent
+    // to be a real object on screen rather than a speck. Still capped, because
+    // an uncapped point turns into a full-screen blob the moment you fly at it.
+    float px = min(size * (1100.0 / -mv.z) * (0.8 + 0.26 * focus), 190.0);
     gl_PointSize = px; vPx = px;
     // entrance: the field wakes top-down after the spines (start 1.8s, wave 1.2s + 0.6s ease)
     float intro = clamp((uT - 1.8 - ((uZTop - position.z) / uZSpan) * 1.2) / 0.6, 0.0, 1.0);
     vFade = clamp(1.45 + mv.z / 9000.0, 0.3, 1.0) * (0.35 + 0.65 * focus) * intro;
     gl_Position = projectionMatrix * mv; }`;
+// Every node type is DRAWN, not dotted. The artwork set was designed component
+// by component in the lab (03_Marketing/booboo-node-lab) against the ratified
+// direction, and this is where it meets real data.
+//
+// TWO FAMILIES, and the split carries the semantics:
+//   LIVING  (agent, bucket, observation, report) — soft, translucent, lit from
+//           within. These are the things that DO something.
+//   WRITTEN (contract, document) — mineral: hard edges, ruled lines, still.
+//           These are what the living things are BOUND BY.
+// That is what lets a law be told from an agent at two pixels, which is the only
+// test that matters once 2,839 of them share a frame.
+//
+// Detail is gated on vPx on purpose. A sprite three pixels across cannot show a
+// comb row or a clause rule, and paying for them is how a dense field turns to
+// mush — so the far field collapses to core+halo and the near field earns its
+// structure. Same atom, honest at both ends.
 const FRAG = /* glsl */ `
-  precision mediump float; varying vec3 vColor; varying float vFade; varying float vPx;
+  precision highp float;
+  varying vec3 vColor; varying float vFade; varying float vPx; varying float vKind;
+
+  float bellHalf(float t){
+    float crown = pow(max(0.0, 1.0 - pow(max(0.0, t - 0.30) / 0.74, 2.3)), 0.62);
+    return 0.34 * crown * smoothstep(0.0, 0.40, t);
+  }
+
   void main() {
-    vec2 d = gl_PointCoord - vec2(0.5); float r = length(d) * 2.0;
-    if (r > 1.0) discard;
-    float core = exp(-r * r * 5.0);
-    float rim = smoothstep(0.55, 0.72, r) * (1.0 - smoothstep(0.78, 1.0, r));
-    rim *= smoothstep(7.0, 15.0, vPx);            // rings only on landmark-scale sprites
-    float a = (core * 0.9 + rim * 0.24) * vFade;
-    gl_FragColor = vec4(vColor * (0.85 + core * 0.55), a); }`;
+    vec2 uv = gl_PointCoord;
+    vec2 p = vec2(uv.x - 0.5, 1.0 - uv.y);   // p.y: 0 at base, 1 at crown
+    float t = p.y;
+    float r = length(vec2(p.x, p.y - 0.5)) * 2.0;
+    int k = int(vKind + 0.5);
+
+    // Below ~9px no artwork survives; draw the honest thing instead of a smear.
+    float detail = smoothstep(9.0, 20.0, vPx);
+    float lum = 0.0;
+
+    if (detail < 0.02) {
+      if (r > 1.0) discard;
+      lum = exp(-r * r * 5.0) * 0.95;
+    } else if (k == 2) {                      // observation — 2,100 of them
+      float d = length(vec2(p.x, (p.y - 0.5) * 1.3));
+      lum = exp(-d * d * 46.0) + exp(-d * d * 6.0) * 0.22;
+    } else if (k == 1 || k == 4) {            // contract / document — WRITTEN
+      float w = (k == 1) ? 0.15 : 0.085;
+      float ch = min(smoothstep(0.0, 0.10, t), smoothstep(1.0, 0.90, t));
+      float hw = w * ch; if (hw <= 5e-4) discard;
+      float q = abs(p.x) / hw; if (q >= 1.06) discard;
+      float fill = (0.14 + 0.18 * q * q) * smoothstep(1.0, 0.93, q);
+      float edge = smoothstep(0.90, 1.0, q) * (1.0 - smoothstep(1.0, 1.05, q)) * 0.95;
+      float rule = pow(max(0.0, sin(t * (k == 1 ? 34.0 : 22.0))), 12.0)
+                 * smoothstep(0.10, 0.20, t) * smoothstep(0.94, 0.84, t) * 0.45 * detail;
+      lum = fill + edge + rule;
+    } else if (k == 3) {                      // report — living, but it carries writing
+      float hw = 0.11 * smoothstep(0.24, 0.40, t) * smoothstep(0.90, 0.76, t);
+      if (hw <= 5e-4) discard;
+      float q = abs(p.x) / hw; if (q >= 1.0) discard;
+      lum = (0.22 + 0.32 * q * q) * smoothstep(1.0, 0.90, q)
+          + pow(max(0.0, sin((t - 0.24) * 40.0)), 14.0) * 0.34 * detail;
+    } else if (k == 5) {                      // bucket — a membrane with a swarm in it
+      vec2 e = vec2(p.x / 0.30, (p.y - 0.5) / 0.40); float rr = length(e);
+      if (rr > 1.2) discard;
+      lum = smoothstep(0.84, 1.0, rr) * (1.0 - smoothstep(1.0, 1.12, rr)) * 0.55
+          + (1.0 - smoothstep(0.0, 1.0, rr)) * 0.10;
+      for (int i = 0; i < 8; i++) {
+        float fi = float(i);
+        vec2 q = vec2(fract(sin(fi * 12.9898) * 43758.5453) * 2.0 - 1.0,
+                      fract(sin(fi * 78.233) * 43758.5453) * 2.0 - 1.0) * 0.72;
+        lum += exp(-pow(length(e - q) * 5.0, 2.0)) * 0.5 * detail;
+      }
+    } else if (k == 6) {                      // root — exactly one exists
+      vec2 e = vec2(p.x, p.y - 0.5); float rr = length(e);
+      float a2 = atan(e.y, e.x);
+      lum = exp(-rr * rr * 420.0) * 1.7 + exp(-rr * rr * 16.0) * 0.40
+          + pow(max(0.0, cos(a2 * 7.0)), 28.0) * exp(-rr * rr * 7.0) * 0.5 * detail;
+    } else {                                  // agent — the bell
+      float hw = bellHalf(t); if (hw <= 5e-4) discard;
+      float q = abs(p.x) / hw; if (q >= 1.05) discard;
+      lum = (0.13 + 0.34 * pow(q, 2.4)) * smoothstep(1.0, 0.88, q)
+          + smoothstep(0.84, 0.99, q) * (1.0 - smoothstep(0.99, 1.05, q))
+            * (0.12 + 0.44 * smoothstep(0.06, 0.34, t) * smoothstep(1.0, 0.66, t))
+          + pow(max(0.0, cos((p.x / max(hw, 1e-4)) * 22.0)), 4.0)
+            * smoothstep(0.04, 0.26, t) * smoothstep(1.0, 0.70, t) * 0.30 * detail
+          + exp(-(p.x * p.x + pow(p.y - 0.86, 2.0)) * 1400.0) * 1.2;
+    }
+
+    float a = lum * vFade;
+    if (a < 0.004) discard;
+    gl_FragColor = vec4(vColor * (0.85 + lum * 0.55), clamp(a, 0.0, 1.0)); }`;
 
 // ── pulse-river edges: a light travels source→target along each (static) link ──
 const PULSE_VERT = /* glsl */ `
@@ -116,15 +202,27 @@ function Field({ laid, cfg, onPick, focus, introUni }: { laid: Laid; cfg: Booboo
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(laid.positions, 3));
     g.setAttribute("color", new THREE.BufferAttribute(laid.colors, 3));
+    // ONE sprite system now draws EVERY node. Landmarks used to be zeroed out of
+    // this cloud and re-drawn as brass meshes, which meant two renderers, two
+    // material languages and a hard seam between them at tier 1/2. The redesign
+    // makes them the same kind of thing at different scales, so the mesh path is
+    // deleted and the tier only decides how big the artwork is drawn.
+    // Tier 3 lifted from 1.0 to 1.7: 2,717 ledger nodes were rendering as thin
+    // dust rather than a floor. The fix is presence per point, not more spread —
+    // spreading the same count over a wider area is what made it dust in the
+    // first place.
+    const TIER = [7.4, 4.3, 1.9, 1.7];
     const sizeArr = new Float32Array(laid.count);
+    const kindArr = new Float32Array(laid.count);
     for (let i = 0; i < laid.count; i++) {
       const layer = laid.nodeLayer[i];
       const vis = cfg.layers[layer] !== false;
-      sizeArr[i] = vis ? laid.sizes[i] * cfg.nodeScale * (cfg.sizes[layer] ?? 1) : 0;
+      const tier = Math.max(0, Math.min(3, laid.nodeTier[i]));
+      sizeArr[i] = vis ? laid.sizes[i] * TIER[tier] * cfg.nodeScale * (cfg.sizes[layer] ?? 1) : 0;
+      kindArr[i] = laid.nodeKind[i];
     }
-    // landmarks (tier<=1) render as brass objects, not points — zero them out of the cloud
-    for (let i = 0; i < laid.count; i++) if (laid.nodeTier[i] <= 1) sizeArr[i] = 0;
     g.setAttribute("size", new THREE.BufferAttribute(sizeArr, 1));
+    g.setAttribute("aKind", new THREE.BufferAttribute(kindArr, 1));
     // torch focus: 1 = lit (selection + neighbourhood), sub-1 = dimmed. All-ones when idle.
     g.setAttribute("focus", new THREE.BufferAttribute(focus ?? new Float32Array(laid.count).fill(1), 1));
     return g;
@@ -191,21 +289,33 @@ function Flags({ flags, onSelect, introBox, reduced }: { flags: Flagged[]; onSel
         const col = FLAG_COLOR[f.kind];
         return (
           <group key={f.id} position={f.pos}>
+            {/* A flag is the node BURNING, not a ring drawn around it. The two
+                concentric rings this replaces read as a rifle sight — targeting
+                chrome borrowed from HUDs, which is the one visual idiom a
+                bioluminescent colony cannot survive. An alarm here is heat in
+                cold water: a hard core bleeding outward, no outline at all.
+                Warm exists in exactly two places in this scene, and this is one. */}
             <mesh
               onClick={(e) => { e.stopPropagation(); onSelect?.(f.id); }}
               onPointerOver={() => { document.body.style.cursor = "pointer"; }}
               onPointerOut={() => { document.body.style.cursor = "auto"; }}
             >
-              <ringGeometry args={[16, 22, 32]} />
-              <meshBasicMaterial color={col} transparent opacity={0.95} side={THREE.DoubleSide} depthTest={false} depthWrite={false} toneMapped={false} />
+              <circleGeometry args={[10, 24]} />
+              <meshBasicMaterial color={col} transparent opacity={0.98} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
+            </mesh>
+            {/* the bleed: three soft shells, each wider and fainter, so the heat
+                falls off into the water instead of ending on an edge */}
+            <mesh raycast={() => null}>
+              <circleGeometry args={[21, 24]} />
+              <meshBasicMaterial color={col} transparent opacity={0.30} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
             </mesh>
             <mesh raycast={() => null}>
-              <ringGeometry args={[30, 33, 32]} />
-              <meshBasicMaterial color={col} transparent opacity={0.38} side={THREE.DoubleSide} depthTest={false} depthWrite={false} toneMapped={false} />
+              <circleGeometry args={[38, 24]} />
+              <meshBasicMaterial color={col} transparent opacity={0.13} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
             </mesh>
             <mesh raycast={() => null}>
-              <circleGeometry args={[9, 20]} />
-              <meshBasicMaterial color={col} transparent opacity={0.9} depthTest={false} depthWrite={false} toneMapped={false} />
+              <circleGeometry args={[64, 24]} />
+              <meshBasicMaterial color={col} transparent opacity={0.05} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
             </mesh>
           </group>
         );
@@ -762,14 +872,21 @@ export function Booboo({ data, cfg, onSelect, sel, intro = true }: { data: Boobo
       <IntroDriver uni={introUni} box={introBox} />
       <Starfield scale={radius / 12} />
       <FrontierFog scale={radius / 12} amount={c.fog} />
+      {/* The scene is now: filaments, the drawn node field, and the alarms. The
+          platform discs, the light-shaft spines and the brass landmark meshes
+          are all still rendered ONLY when their cfg asks for them, and all three
+          default off — they belong to the previous visual language, where a few
+          brass objects were the subject and 2,700 nodes were background. In the
+          ratified direction the field IS the subject, so switching them on is
+          opting back into the old look rather than adding to this one. */}
       <Spin orbit={c.orbit} drift={c.drift} peel={c.peel}>
-        {data.meta.layers.map((l, i) => (
+        {c.platforms && data.meta.layers.map((l, i) => (
           (c.layers[l.name] !== false) && <Platform key={l.name} z={planeZ(i, nL)} color={l.color || "#7a8aa0"} label={l.label || l.name} radius={platR} planes={c.platforms} rings={c.rings} labels={c.labels} introBox={introBox} introDelay={(nL - 1 - i) * 0.18} />
         ))}
         <Spines data={data} laid={laid} intensity={c.spines} bloom={c.bloom > 0} introUni={introUni} />
         <PulseLinks laid={laid} cfg={c} focus={focus.link} introUni={introUni} />
         <Field laid={laid} cfg={c} onPick={(i) => onSelect?.(laid.ids[i])} focus={focus.node} introUni={introUni} />
-        <Landmarks data={data} laid={laid} cfg={c} focus={focus.node} sel={sel} onSelect={onSelect} introBox={introBox} />
+        {c.rings && <Landmarks data={data} laid={laid} cfg={c} focus={focus.node} sel={sel} onSelect={onSelect} introBox={introBox} />}
         <Flags flags={laid.flags} onSelect={onSelect} introBox={introBox} reduced={!!reduced} />
         {c.labels && <NodeLabels data={data} laid={laid} />}
       </Spin>

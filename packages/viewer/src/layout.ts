@@ -16,6 +16,11 @@ export type Laid = {
   index: Map<string, number>;
   nodeLayer: string[]; // layer name per node index (for layer-isolation toggles)
   nodeTier: Int8Array; // tier per node index (landmarks = tier <= 1)
+  // Which ARTWORK draws this node. The redesign gives every node type its own
+  // designed form rather than one generic dot, so the type has to reach the
+  // shader as a number: 0 agent · 1 contract · 2 observation · 3 report ·
+  // 4 document · 5 bucket · 6 root.
+  nodeKind: Uint8Array;
   flags: Flagged[]; // every alarm in the graph, worst first — the "where's the problem" set
   positions: Float32Array; // n*3
   colors: Float32Array; // n*3
@@ -63,11 +68,16 @@ export function layout(g: BoobooGraph): Laid {
   const ids: string[] = new Array(n);
   const nodeLayer: string[] = new Array(n);
   const nodeTier = new Int8Array(n);
+  const nodeKind = new Uint8Array(n);
+  const KIND: Record<string, number> = { agent: 0, contract: 1, observation: 2, report: 3, document: 4, bucket: 5 };
   for (let i = 0; i < n; i++) {
     index.set(nodes[i].id, i);
     ids[i] = nodes[i].id;
     nodeLayer[i] = nodes[i].layer;
     nodeTier[i] = (nodes[i].tier ?? 2) as number;
+    // The root gets its own artwork (6) whatever its declared type — there is
+    // exactly one and it must be the brightest thing in any frame containing it.
+    nodeKind[i] = nodes[i].id === g.meta.root ? 6 : (KIND[nodes[i].type ?? ""] ?? 2);
   }
 
   const layerOrder: Record<string, number> = {};
@@ -168,14 +178,21 @@ export function layout(g: BoobooGraph): Laid {
       // the lower bands generous, which is what makes the base read as a floor
       // rather than a cone.
       const depth = nLayers > 1 ? li / (nLayers - 1) : 1;
-      const spread = 0.08 + 0.92 * Math.pow(depth, 0.75);
+      // Max spread pulled to 0.78 so the mound is TIGHTER. Density is points per
+      // area: the deepest band holds 2,717 nodes and only reads as a seabed if
+      // they are concentrated. A wider floor with the same count is always dust.
+      const spread = 0.08 + 0.70 * Math.pow(depth, 0.75);
       // MELD: the fan alone still left every cluster as its own tidy halo, so the
       // deepest band read as a dozen separate swarms rather than one floor. A
       // cluster's footprint has to grow faster than the gap to its neighbour, so
       // the bottom bands BLEED INTO EACH OTHER and become continuous. Upper bands
       // are untouched (depth^1.5 is ~0 there) and stay legible as distinct
       // departments, which is the part that still has to be readable.
-      const meld = 1 + 2.6 * Math.pow(depth, 1.5);
+      // Pulled back from 2.6 — that value dispersed the deep bands so far that
+      // the same node count covered a much larger area and the floor read as
+      // scattered dust instead of a seabed. Density is points per area, so the
+      // mound has to get TIGHTER, not wider.
+      const meld = 1 + 1.5 * Math.pow(depth, 1.5);
       x = (cx + Math.cos(la) * lr * meld) * spread;
       y = (cy + Math.sin(la) * lr * meld * 0.92) * spread;
       // Thin Z jitter keeps each band a crisp shelf (was ±45; ±20 reads sharper).
@@ -188,7 +205,19 @@ export function layout(g: BoobooGraph): Laid {
     if (Math.abs(x) > bounds) bounds = Math.abs(x);
     if (Math.abs(y) > bounds) bounds = Math.abs(y);
 
-    const col = nd.color ? hex2rgb(nd.color) : layerColor[nd.layer] ?? [0.7, 0.7, 0.7];
+    // PALETTE: cool monochrome, graded by depth. The data still carries the old
+    // gold / silver / bronze / ledger-purple layer colours and they are what made
+    // the redesigned field read warm — a bioluminescent colony cannot have four
+    // hues of metal in it. Colour now says DEPTH, not category: bone-white at the
+    // apex cooling to deep cyan on the floor. Type is carried by the ARTWORK and
+    // urgency by the flags, which are the only warm thing left in the scene, so
+    // nothing is lost by taking the hue away from the layer.
+    const dpt = nLayers > 1 ? (layerOrder[nd.layer] ?? 0) / (nLayers - 1) : 0;
+    const col: [number, number, number] = [
+      0.92 - 0.30 * dpt,
+      0.96 - 0.16 * dpt,
+      1.00 - 0.02 * dpt,
+    ];
     // TIER-DIM, INVERTED 2026-08-03 (Jesse ratified redesign direction C).
     //
     // This line used to read `>= 3 ? 0.34 : === 2 ? 0.6 : 1.05` under the rule
@@ -240,9 +269,19 @@ export function layout(g: BoobooGraph): Laid {
     // colour precedence: explicit link.color → verb token → neutral fallback.
     // Without this every relation renders identically and the graph says nothing
     // about WHAT connects two things (0 of 397 Pemberton links carry a colour).
-    const verbHex = VERB_COLOR[l.type];
-    const base = l.color ? hex2rgb(l.color) : verbHex ? hex2rgb(verbHex) : spine ? [0.16, 0.14, 0.2] : [0.3, 0.34, 0.42];
-    const boost = spine ? 1 : ta <= 1 || tb <= 1 ? 0.7 : 0.4; // rivers dimmer than the backbone
+    // FILAMENTS ARE COOL, AND THE VERB IS CARRIED BY BEHAVIOUR NOT HUE.
+    // The verb palette gave every relation its own colour, which is a sound idea
+    // and the wrong one here: a rainbow of threads destroys the cool field the
+    // whole direction rests on, and it was what kept the redesigned graph reading
+    // warm even after the nodes went cold. Warmth is now reserved for two things
+    // — the flags, and `amends`, which occurs exactly ONCE in 397 links (the
+    // § 14 amendment, the bottom rewriting the top) and has earned the right to
+    // be the one thread that breaks the palette.
+    const amends = l.type === "amends";
+    const base: [number, number, number] = amends ? [1.0, 0.46, 0.28] : [0.62, 0.78, 0.88];
+    // inherits is 214 of 397 links. If the backbone is the brightest thing in the
+    // scene it BECOMES the scene, so structure is quiet and events carry light.
+    const boost = amends ? 1.5 : spine ? 0.34 : ta <= 1 || tb <= 1 ? 0.55 : 0.30;
     // direction is carried by a gradient: the source end sits darker than the
     // target end, so a still frame still reads which way the relation points.
     for (let e = 0; e < 2; e++) {
@@ -279,6 +318,7 @@ export function layout(g: BoobooGraph): Laid {
     index,
     nodeLayer,
     nodeTier,
+    nodeKind,
     flags,
     positions,
     colors,

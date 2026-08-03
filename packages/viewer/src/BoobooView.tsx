@@ -224,10 +224,23 @@ export function BoobooView({
     ];
     const onMessage = (e: MessageEvent) => {
       if (!ALLOWED.some((re) => re.test(e.origin))) return;
-      const m = e.data as { type?: string; cfg?: Partial<BoobooCfg> } | null;
-      if (!m || m.type !== "booboo:cfg" || !m.cfg) return;
-      setCfg((prev) => mergeCfg(prev, m.cfg as Partial<BoobooCfg>));
-      setActivePreset(null); // the host is driving now; no preset is "active"
+      const m = e.data as { type?: string; cfg?: Partial<BoobooCfg>; id?: string | null } | null;
+      if (!m) return;
+
+      if (m.type === "booboo:cfg" && m.cfg) {
+        setCfg((prev) => mergeCfg(prev, m.cfg as Partial<BoobooCfg>));
+        setActivePreset(null); // the host is driving now; no preset is "active"
+        return;
+      }
+
+      /* Selecting a node is what makes an embed EXPLAIN itself. Lighting a
+         whole layer is scenery — the reader sees a band move and learns
+         nothing. Naming one node opens its dossier (type, layer, relations)
+         and labels it in space, so a host page can say "down to the night
+         porter" and have the graph point at the night porter. `null` clears. */
+      if (m.type === "booboo:sel") {
+        setSel(typeof m.id === "string" ? m.id : null);
+      }
     };
     window.addEventListener("message", onMessage);
     // Tell the host we are listening, so it does not post into the void while
