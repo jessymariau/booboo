@@ -112,8 +112,21 @@ const FRAG = /* glsl */ `
     float lum = 0.0;
 
     if (detail < 0.02) {
-      if (r > 1.0) discard;
-      lum = exp(-r * r * 5.0) * 0.95;
+      // THE FAMILY HAS TO SURVIVE THE FALLBACK. This branch used to draw one
+      // generic round dot for every kind, which meant the living/written split —
+      // the entire organising idea — vanished below 9px. That is precisely where
+      // it matters most: 2,717 of 2,839 nodes spend their whole life at this
+      // size, so "report and document are indistinguishable at depth" was not a
+      // shader detail, it was the fallback erasing the design.
+      // Living things stay round and soft. Written things stay a crisp upright
+      // tick. Two pixels is enough to carry that, and nothing else needs to.
+      if (k == 1 || k == 4) {
+        if (abs(p.x) > 0.17 || abs(p.y - 0.5) > 0.46) discard;
+        lum = (1.0 - smoothstep(0.0, 0.17, abs(p.x))) * (1.0 - smoothstep(0.30, 0.46, abs(p.y - 0.5))) * 1.05;
+      } else {
+        if (r > 1.0) discard;
+        lum = exp(-r * r * 5.0) * 0.95;
+      }
     } else if (k == 2) {                      // observation — 2,100 of them
       float d = length(vec2(p.x, (p.y - 0.5) * 1.3));
       lum = exp(-d * d * 46.0) + exp(-d * d * 6.0) * 0.22;

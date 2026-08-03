@@ -193,8 +193,30 @@ export function layout(g: BoobooGraph): Laid {
       // scattered dust instead of a seabed. Density is points per area, so the
       // mound has to get TIGHTER, not wider.
       const meld = 1 + 1.5 * Math.pow(depth, 1.5);
-      x = (cx + Math.cos(la) * lr * meld) * spread;
-      y = (cy + Math.sin(la) * lr * meld * 0.92) * spread;
+      let px = (cx + Math.cos(la) * lr * meld) * spread;
+      let py = (cy + Math.sin(la) * lr * meld * 0.92) * spread;
+
+      // ONE FLOOR, NOT NINE DISCS.
+      //
+      // Every node is placed around its own cluster's centroid, so each
+      // department becomes its own little disc and the deepest band read as nine
+      // separate swarms with visible gaps between them — rings, not a seabed.
+      // Widening the scatter did not fix it and could not: the clusters just
+      // became bigger discs. The floor has to stop being cluster-shaped at all.
+      //
+      // So deep nodes are blended toward a GLOBAL phyllotaxis position — the
+      // same even-packing used for the cluster centroids, applied across every
+      // node at once. Phyllotaxis has no seams and no preferred direction, which
+      // is exactly what a continuous shelf needs. The blend is depth-squared, so
+      // the upper bands keep their department structure intact (you can still
+      // see which head owns what) and only the ledger dissolves into one mass.
+      // That is also true to the data: nobody reads 2,717 observations by
+      // department, they read them as the floor the house sits on.
+      const gA = i * GOLDEN;
+      const gR = R * 0.92 * Math.sqrt((i + 0.5) / n);
+      const merge = 0.72 * depth * depth;
+      x = px + (Math.cos(gA) * gR - px) * merge;
+      y = py + (Math.sin(gA) * gR * 0.92 - py) * merge;
       // Thin Z jitter keeps each band a crisp shelf (was ±45; ±20 reads sharper).
       z = pz + (hash(nd.id + "z") - 0.5) * 40;
     }
@@ -278,10 +300,18 @@ export function layout(g: BoobooGraph): Laid {
     // § 14 amendment, the bottom rewriting the top) and has earned the right to
     // be the one thread that breaks the palette.
     const amends = l.type === "amends";
-    const base: [number, number, number] = amends ? [1.0, 0.46, 0.28] : [0.62, 0.78, 0.88];
+    // declares and covers were not separable from inherits — all three arrived as
+    // the same faint cool thread. They keep the palette but take a colder, paler
+    // cast and more light, which is enough to tell an authored relation (a law
+    // DECLARING, a policy COVERING) from the structural backbone without
+    // reintroducing a hue per verb.
+    const authored = l.type === "declares" || l.type === "covers" || l.type === "audits";
+    const base: [number, number, number] = amends ? [1.0, 0.46, 0.28]
+      : authored ? [0.80, 0.90, 1.0]
+      : [0.62, 0.78, 0.88];
     // inherits is 214 of 397 links. If the backbone is the brightest thing in the
     // scene it BECOMES the scene, so structure is quiet and events carry light.
-    const boost = amends ? 1.5 : spine ? 0.34 : ta <= 1 || tb <= 1 ? 0.55 : 0.30;
+    const boost = amends ? 1.5 : authored ? 0.85 : spine ? 0.34 : ta <= 1 || tb <= 1 ? 0.55 : 0.30;
     // direction is carried by a gradient: the source end sits darker than the
     // target end, so a still frame still reads which way the relation points.
     for (let e = 0; e < 2; e++) {
