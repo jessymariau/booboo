@@ -823,6 +823,51 @@ function Spin({ orbit, drift, peel, children }: { orbit: number; drift: number; 
   return <group ref={grp} scale={[1, 1, Math.max(0.05, peel)]}>{children}</group>;
 }
 
+// ── focus: fly the camera to ONE node and hold it there ────────────────────
+// The claim this thing makes is that it finds the one that matters out of
+// thousands. A selection alone cannot make that claim: `sel` torches a
+// neighbourhood where it already stands, so a host can say "the night porter"
+// and the reader still has to hunt the frame for what changed. This moves the
+// camera, which is the difference between naming a node and pointing at it.
+//
+// The marker is a real Object3D parented INSIDE Spin, so getWorldPosition
+// inherits the group's wandering rotation AND its peel z-scale for free.
+// Recomputing that by hand drifts the instant orbit or peel changes, and it
+// changes on almost every beat of a scroll-driven descent.
+//
+// It HANDS THE CAMERA BACK. Focus cleared -> ease home, then stop touching it
+// entirely: a viewer that was never focused keeps its own framing, and a user
+// who grabs the controls afterwards is not fought for the rest of the session.
+function FocusDriver({ pos, homeDist, near }: { pos: [number, number, number] | null; homeDist: number; near: number }) {
+  const marker = useRef<THREE.Object3D>(null);
+  const { camera, controls } = useThree();
+  const engaged = useRef(false);
+  const world = useMemo(() => new THREE.Vector3(), []);
+  const arm = useMemo(() => new THREE.Vector3(), []);
+  useFrame(() => {
+    const ctrl = controls as unknown as { target: THREE.Vector3; update: () => void } | null;
+    if (!ctrl?.target) return;
+    if (pos) engaged.current = true;
+    if (!engaged.current) return;
+
+    if (pos && marker.current) marker.current.getWorldPosition(world);
+    else world.set(0, 0, 0);
+
+    ctrl.target.lerp(world, 0.055);
+    arm.copy(camera.position).sub(ctrl.target);
+    const d = arm.length();
+    const want = pos ? near : homeDist;
+    if (d > 1e-4) {
+      arm.setLength(d + (want - d) * 0.055);
+      camera.position.copy(ctrl.target).add(arm);
+    }
+    ctrl.update();
+
+    if (!pos && ctrl.target.lengthSq() < 1 && Math.abs(d - homeDist) < homeDist * 0.02) engaged.current = false;
+  });
+  return pos ? <object3D ref={marker} position={pos} /> : null;
+}
+
 // Absolute cap on DOM label portals: many sparse layers could otherwise spawn thousands of
 // per-frame <Html> portals. Keep the per-layer count gate; cap the total at top-N by weight.
 const MAX_LABELS = 150;
@@ -854,7 +899,7 @@ function NodeLabels({ data, laid }: { data: BoobooGraph; laid: Laid }) {
 }
 
 /** The core scene. Give it a Booboo graph (+ optional cfg); it lays out + renders the tiered field. */
-export function Booboo({ data, cfg, onSelect, sel, intro = true }: { data: BoobooGraph; cfg?: BoobooCfg; onSelect?: (id: string | null) => void; sel?: string | null; intro?: boolean }) {
+export function Booboo({ data, cfg, onSelect, sel, focusId, intro = true }: { data: BoobooGraph; cfg?: BoobooCfg; onSelect?: (id: string | null) => void; sel?: string | null; focusId?: string | null; intro?: boolean }) {
   const laid = useMemo(() => layout(data), [data]);
   const c = useMemo(() => cfg ?? defaultCfg(data), [cfg, data]);
   const nL = Math.max(1, data.meta.layers.length);
@@ -906,6 +951,14 @@ export function Booboo({ data, cfg, onSelect, sel, intro = true }: { data: Boobo
     }
     return { node: nf, link: lf };
   }, [sel, laid, data]);
+  // Local coords only — FocusDriver's marker lives inside Spin, which applies
+  // the rotation and the peel z-scale on top.
+  const focusPos = useMemo<[number, number, number] | null>(() => {
+    if (!focusId) return null;
+    const i = laid.index.get(focusId);
+    if (i == null) return null;
+    return [laid.positions[i * 3], laid.positions[i * 3 + 1], laid.positions[i * 3 + 2]];
+  }, [focusId, laid]);
   return (
     <Canvas
       camera={{ position: [0, -cam * 0.55, cam * 0.82], far: cam * 22, near: cam * 0.02, fov: 24 }}
@@ -940,6 +993,13 @@ export function Booboo({ data, cfg, onSelect, sel, intro = true }: { data: Boobo
         {c.rings && <Landmarks data={data} laid={laid} cfg={c} focus={focus.node} sel={sel} onSelect={onSelect} introBox={introBox} />}
         <Flags flags={laid.flags} onSelect={onSelect} introBox={introBox} reduced={!!reduced} />
         {c.labels && <NodeLabels data={data} laid={laid} />}
+        {/* near = 1.15r, NOT a dive. Shot at 0.5r the camera ends up INSIDE the
+            2,717-node memory floor and the frame is a blur of out-of-focus
+            blobs — closer stopped meaning clearer several hundred units back.
+            The pointing is done by re-centring on the node while the graph
+            stays whole; `sel` dims everything outside its neighbourhood to 12%,
+            so the torch isolates and the camera only has to aim. */}
+        <FocusDriver pos={focusPos} homeDist={cam} near={radius * 2.2} />
       </Spin>
       <OrbitControls autoRotate={false} enableRotate enableZoom enablePan screenSpacePanning enableDamping dampingFactor={0.08} target={[0, 0, 0]} minPolarAngle={0} maxPolarAngle={Math.PI} makeDefault />
       <EffectComposer>

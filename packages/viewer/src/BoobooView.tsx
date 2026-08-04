@@ -190,6 +190,9 @@ export function BoobooView({
   const initial = useMemo(() => ({ ...defaultCfg(data), ...(initialCfg ?? {}) }), [data, initialCfg]);
   const [cfg, setCfg, resetCfg] = usePersisted<BoobooCfg>(persistKey, initial, persist, mergeCfg, urlCfg());
   const [sel, setSel] = useState<string | null>(initialSel);
+  // Camera target, set only by a host over booboo:focus. Never by a click —
+  // hijacking the camera on every selection would fight the user in the board.
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [palette, setPalette] = useState(false);
   // view presets (CRAFT §4) — which one is active, purely a UI highlight; the
   // pro drawer below can always override it, and that's fine (a preset is a
@@ -240,6 +243,20 @@ export function BoobooView({
          porter" and have the graph point at the night porter. `null` clears. */
       if (m.type === "booboo:sel") {
         setSel(typeof m.id === "string" ? m.id : null);
+        return;
+      }
+
+      /* booboo:focus MOVES THE CAMERA to one node, which `sel` deliberately
+         does not. Selection torches a neighbourhood where it stands; on a
+         2,839-node graph the reader still has to hunt the frame for what
+         changed. Focus flies there and holds it, so "it finds the one that
+         matters" stops being a sentence in the copy and becomes the thing on
+         screen. Kept SEPARATE from sel on purpose — the board and the site
+         both select without ever wanting the camera taken off them, and
+         folding the two together would have moved their cameras too.
+         `null` releases the camera and eases it home. */
+      if (m.type === "booboo:focus") {
+        setFocusId(typeof m.id === "string" ? m.id : null);
       }
     };
     window.addEventListener("message", onMessage);
@@ -350,7 +367,7 @@ export function BoobooView({
             MEMORY / BRONZE · SILVER · DEPARTMENT HEADS" stacked on one line.
             The Orient card already names the bands in order, so dropping them
             here costs a narrow visitor nothing. */}
-        <Booboo data={data} cfg={narrow ? { ...cfg, labels: false } : cfg} onSelect={setSel} sel={sel} />
+        <Booboo data={data} cfg={narrow ? { ...cfg, labels: false } : cfg} onSelect={setSel} sel={sel} focusId={focusId} />
       </RenderBoundary>
 
       {/* HUD — top-left. On narrow it drops BELOW the preset bar, which is
