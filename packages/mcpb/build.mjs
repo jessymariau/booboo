@@ -55,6 +55,14 @@ const manifest = readFileSync(join(here, "manifest.template.json"), "utf8").repl
 writeFileSync(join(stageDir, "manifest.json"), manifest);
 JSON.parse(manifest); // fail loudly here rather than inside mcpb pack
 
+// 3b — the icon. The manifest names it, so a missing file is a broken listing.
+const iconSrc = join(here, "icon.png");
+if (!existsSync(iconSrc)) {
+  console.error("booboo: icon.png missing — the manifest declares it and directories render it");
+  process.exit(1);
+}
+cpSync(iconSrc, join(stageDir, "icon.png"));
+
 // 4 — pack
 run(npx, ["-y", "@anthropic-ai/mcpb@2", "pack", stageDir, join(buildDir, "booboo.mcpb")], repoRoot);
 

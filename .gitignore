@@ -15,6 +15,8 @@ coverage/
 !packages/build/test/fixture.booboo.json
 # local verification artifacts (screenshots + smoke scripts)
 *.png
+# ...except the MCPB listing icon — a shipped product asset. build.mjs fails without it.
+!packages/mcpb/icon.png
 verify_*.py
 shot_*.py
 

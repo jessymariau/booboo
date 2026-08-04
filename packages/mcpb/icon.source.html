@@ -1,0 +1,42 @@
+<style>
+  html,body{margin:0;padding:0;background:#000}
+  svg{display:block}
+</style>
+<svg id="icon" width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="42%" cy="34%" r="78%">
+      <stop offset="0%" stop-color="#1d1916"/>
+      <stop offset="100%" stop-color="#0e0c0b"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- graph edges: main pad out to each toe, plus the toe arc. Gaps are deliberate so these read. -->
+  <g stroke="#c9a04a" stroke-width="11" stroke-linecap="round" fill="none">
+    <line x1="256" y1="358" x2="98"  y2="210"/>
+    <line x1="256" y1="358" x2="194" y2="132"/>
+    <line x1="256" y1="358" x2="318" y2="132"/>
+    <line x1="256" y1="358" x2="414" y2="210"/>
+    <line x1="98"  y1="210" x2="194" y2="132"/>
+    <line x1="194" y1="132" x2="318" y2="132"/>
+    <line x1="318" y1="132" x2="414" y2="210"/>
+  </g>
+
+  <!-- satellite nodes sit in the visible gaps between pads -->
+  <g fill="#c9a04a">
+    <circle cx="161" cy="269" r="14"/>
+    <circle cx="219" cy="222" r="14"/>
+    <circle cx="293" cy="222" r="14"/>
+    <circle cx="351" cy="269" r="14"/>
+  </g>
+
+  <!-- the pads are the graph's major nodes -->
+  <g fill="#e8c9a0">
+    <ellipse cx="256" cy="358" rx="118" ry="100"/>
+    <circle cx="98"  cy="210" r="50"/>
+    <circle cx="194" cy="132" r="55"/>
+    <circle cx="318" cy="132" r="55"/>
+    <circle cx="414" cy="210" r="50"/>
+  </g>
+</svg>

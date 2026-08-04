@@ -1,8 +1,8 @@
 {
-  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/dist/mcpb-manifest.schema.json",
   "manifest_version": "0.3",
   "name": "booboo",
   "display_name": "Booboo",
+  "icon": "icon.png",
   "version": "__VERSION__",
   "description": "Query your AI system's wiring, knowledge, memory, agents and crons as one rooted graph over MCP.",
   "long_description": "Booboo turns a scattered AI system into one rooted graph an agent can actually query. Point it at a snapshot built by `booboo build` and it answers the questions that otherwise cost a human an afternoon: what feeds what, which cron owns this table, what did we decide about X and when, which agent is responsible for this surface.\n\nIt is also writable. With a journal beside the snapshot, agents can record decisions and reports as they work, and replay them on the next boot — so the graph is a live memory rather than a static export.\n\nOpen-core, MIT licensed. Build a snapshot with `npx create-booboo`.",
