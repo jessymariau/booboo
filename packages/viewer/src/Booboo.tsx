@@ -209,12 +209,28 @@ type IntroBox = React.MutableRefObject<{ t0: number | null; skip: boolean; t: nu
 
 // Drives the entrance clock: one shared set of uniform objects, written once per frame.
 function IntroDriver({ uni, box }: { uni: IntroUni; box: IntroBox }) {
+  const advance = useThree((s) => s.advance);
   useFrame(({ clock }) => {
     const b = box.current;
     if (b.t0 == null) b.t0 = clock.getElapsedTime();
     b.t = b.skip ? 1000 : clock.getElapsedTime() - b.t0;
     uni.uT.value = b.t;
   });
+  // Backstop: a tab that stops rendering frames (hidden, or occlusion-starved while its
+  // pixels stay on screen) strands the last composited frame mid-entrance — useFrame
+  // never runs there, and the skip listeners are gone after 4.2s, so nothing in-app can
+  // recover it. Settle by wall clock and force ONE out-of-rAF frame so the composited
+  // frame left behind is the settled scene, not a half-born one.
+  useEffect(() => {
+    if (box.current.skip) return;
+    const id = setTimeout(() => {
+      const b = box.current;
+      if (b.skip || b.t >= 3.6) return; // entrance finished on its own
+      b.skip = true;
+      advance(performance.now());
+    }, 4500);
+    return () => clearTimeout(id);
+  }, [advance, box]);
   return null;
 }
 
