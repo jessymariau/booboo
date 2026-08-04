@@ -193,6 +193,15 @@ export function BoobooView({
   // Camera target, set only by a host over booboo:focus. Never by a click —
   // hijacking the camera on every selection would fight the user in the board.
   const [focusId, setFocusId] = useState<string | null>(null);
+  // Optional per-message framing, in multiples of the graph radius. The default
+  // is tuned, but "point at this node" is not one framing for every host: a page
+  // whose whole claim is one-out-of-thousands wants the colony to stay whole,
+  // and a board drilling into a subtree does not.
+  const [focusDist, setFocusDist] = useState<number | undefined>(undefined);
+  // Where a focused node should LAND, as a signed fraction of frame width from
+  // centre. Only the host knows this — it is the one that crops our chrome and
+  // runs its own copy over us — so undefined means "use the viewer's own".
+  const [focusBias, setFocusBias] = useState<number | undefined>(undefined);
   const [palette, setPalette] = useState(false);
   // view presets (CRAFT §4) — which one is active, purely a UI highlight; the
   // pro drawer below can always override it, and that's fine (a preset is a
@@ -227,7 +236,7 @@ export function BoobooView({
     ];
     const onMessage = (e: MessageEvent) => {
       if (!ALLOWED.some((re) => re.test(e.origin))) return;
-      const m = e.data as { type?: string; cfg?: Partial<BoobooCfg>; id?: string | null } | null;
+      const m = e.data as { type?: string; cfg?: Partial<BoobooCfg>; id?: string | null; dist?: number; bias?: number } | null;
       if (!m) return;
 
       if (m.type === "booboo:cfg" && m.cfg) {
@@ -257,6 +266,8 @@ export function BoobooView({
          `null` releases the camera and eases it home. */
       if (m.type === "booboo:focus") {
         setFocusId(typeof m.id === "string" ? m.id : null);
+        setFocusDist(typeof m.dist === "number" ? m.dist : undefined);
+        setFocusBias(typeof m.bias === "number" ? m.bias : undefined);
       }
     };
     window.addEventListener("message", onMessage);
@@ -367,7 +378,10 @@ export function BoobooView({
             MEMORY / BRONZE · SILVER · DEPARTMENT HEADS" stacked on one line.
             The Orient card already names the bands in order, so dropping them
             here costs a narrow visitor nothing. */}
-        <Booboo data={data} cfg={narrow ? { ...cfg, labels: false } : cfg} onSelect={setSel} sel={sel} focusId={focusId} />
+        {/* On narrow the dossier is 94% of the frame — there is no visible field
+            left to centre a node in, so the lateral correction is switched off
+            rather than shoving the node off the left edge. */}
+        <Booboo data={data} cfg={narrow ? { ...cfg, labels: false } : cfg} onSelect={setSel} sel={sel} focusId={focusId} focusDist={focusDist} focusPanelPx={node && !narrow ? DOSSIER_W : 0} focusBias={focusBias} />
       </RenderBoundary>
 
       {/* HUD — top-left. On narrow it drops BELOW the preset bar, which is
@@ -650,6 +664,9 @@ function healthOf(status: string | null, p0: number | null): { score: number; co
 
 /** "3h ago" / "2 days ago" / "14 months ago" — undated returns "". */
 /* ── Dossier: the node menu — health-first, tabbed ── */
+// Shared with the focus camera, which has to know how much of the frame this
+// covers to put a focused node in the middle of what is actually SEEN.
+const DOSSIER_W = 420;
 function Dossier({
   n,
   byId,
@@ -736,7 +753,7 @@ function Dossier({
   return (
     // z 20 (tokens z-map): the 3D label portals render inside the canvas
     // container and would otherwise bleed through the panel.
-    <div style={{ position: "absolute", top: 0, right: 0, width: 420, maxWidth: "94%", height: "100%", zIndex: 20, background: T.panelSolid, borderLeft: `1px solid ${T.line}`, color: T.text, display: "flex", flexDirection: "column", boxShadow: "-18px 0 50px rgba(0,0,0,0.45)" }}>
+    <div style={{ position: "absolute", top: 0, right: 0, width: DOSSIER_W, maxWidth: "94%", height: "100%", zIndex: 20, background: T.panelSolid, borderLeft: `1px solid ${T.line}`, color: T.text, display: "flex", flexDirection: "column", boxShadow: "-18px 0 50px rgba(0,0,0,0.45)" }}>
       {/* fixed header + tabs */}
       <div style={{ flex: "0 0 auto", background: T.panelSolid, borderBottom: `1px solid ${T.line}`, borderLeft: `3px solid ${accent}` }}>
         <div style={{ padding: "16px 18px 12px", position: "relative" }}>

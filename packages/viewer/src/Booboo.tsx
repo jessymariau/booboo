@@ -838,12 +838,25 @@ function Spin({ orbit, drift, peel, children }: { orbit: number; drift: number; 
 // It HANDS THE CAMERA BACK. Focus cleared -> ease home, then stop touching it
 // entirely: a viewer that was never focused keeps its own framing, and a user
 // who grabs the controls afterwards is not fought for the rest of the session.
-function FocusDriver({ pos, homeDist, near }: { pos: [number, number, number] | null; homeDist: number; near: number }) {
+// Slower than it wants to be. The move is the whole flex, so it has to read as
+// a decision rather than a snap; 0.055 arrived before the reader's eye did.
+const FOCUS_EASE = 0.032;
+
+// Multiples of the graph radius, TUNED BY SHOOTING IT. Closer stopped meaning
+// clearer several hundred units out: at 0.5r the camera sits INSIDE the
+// 2,717-node memory floor and the frame is a wash of out-of-focus blobs, and
+// 1.15r is no better. Even 2.2r lands dim rather than composed. The colony has
+// to stay whole for "one out of 2,839" to mean anything — the torch does the
+// isolating, the camera only aims.
+const FOCUS_DIST = 3;
+
+function FocusDriver({ pos, homeDist, near, panelPx = 0, bias }: { pos: [number, number, number] | null; homeDist: number; near: number; panelPx?: number; bias?: number }) {
   const marker = useRef<THREE.Object3D>(null);
-  const { camera, controls } = useThree();
+  const { camera, controls, size } = useThree();
   const engaged = useRef(false);
   const world = useMemo(() => new THREE.Vector3(), []);
   const arm = useMemo(() => new THREE.Vector3(), []);
+  const right = useMemo(() => new THREE.Vector3(), []);
   useFrame(() => {
     const ctrl = controls as unknown as { target: THREE.Vector3; update: () => void } | null;
     if (!ctrl?.target) return;
@@ -853,12 +866,33 @@ function FocusDriver({ pos, homeDist, near }: { pos: [number, number, number] | 
     if (pos && marker.current) marker.current.getWorldPosition(world);
     else world.set(0, 0, 0);
 
-    ctrl.target.lerp(world, 0.055);
+    const want = pos ? near : homeDist;
+
+    // THE CANVAS CENTRE IS NOT THE CENTRE OF WHAT IS SEEN. The dossier covers
+    // the right of the frame, so a node centred in the canvas reads visibly
+    // off-centre — shot and confirmed, and it is the whole difference between
+    // "the camera moved" and "it is pointing at THIS".
+    //
+    // `bias` is where the node should LAND, as a signed fraction of canvas
+    // width from centre (negative = left). Default: half the dossier to the
+    // left, which centres it in the field the panel leaves. A host overrides
+    // it, because only the host knows its own frame — an embed that crops the
+    // chrome off and runs a copy column down the left wants the node on the
+    // RIGHT, which is the opposite correction, and the viewer cannot see any
+    // of that from in here.
+    const b = bias ?? -Math.min(panelPx / size.width, 0.5) / 2;
+    if (pos && Math.abs(b) > 0.001) {
+      const cam = camera as THREE.PerspectiveCamera;
+      const visW = 2 * Math.tan((cam.fov * Math.PI) / 360) * want * cam.aspect;
+      right.setFromMatrixColumn(cam.matrix, 0);
+      world.addScaledVector(right, -Math.max(-0.45, Math.min(0.45, b)) * visW);
+    }
+
+    ctrl.target.lerp(world, FOCUS_EASE);
     arm.copy(camera.position).sub(ctrl.target);
     const d = arm.length();
-    const want = pos ? near : homeDist;
     if (d > 1e-4) {
-      arm.setLength(d + (want - d) * 0.055);
+      arm.setLength(d + (want - d) * FOCUS_EASE);
       camera.position.copy(ctrl.target).add(arm);
     }
     ctrl.update();
@@ -899,7 +933,7 @@ function NodeLabels({ data, laid }: { data: BoobooGraph; laid: Laid }) {
 }
 
 /** The core scene. Give it a Booboo graph (+ optional cfg); it lays out + renders the tiered field. */
-export function Booboo({ data, cfg, onSelect, sel, focusId, intro = true }: { data: BoobooGraph; cfg?: BoobooCfg; onSelect?: (id: string | null) => void; sel?: string | null; focusId?: string | null; intro?: boolean }) {
+export function Booboo({ data, cfg, onSelect, sel, focusId, focusDist = FOCUS_DIST, focusPanelPx = 0, focusBias, intro = true }: { data: BoobooGraph; cfg?: BoobooCfg; onSelect?: (id: string | null) => void; sel?: string | null; focusId?: string | null; focusDist?: number; focusPanelPx?: number; focusBias?: number; intro?: boolean }) {
   const laid = useMemo(() => layout(data), [data]);
   const c = useMemo(() => cfg ?? defaultCfg(data), [cfg, data]);
   const nL = Math.max(1, data.meta.layers.length);
@@ -993,13 +1027,11 @@ export function Booboo({ data, cfg, onSelect, sel, focusId, intro = true }: { da
         {c.rings && <Landmarks data={data} laid={laid} cfg={c} focus={focus.node} sel={sel} onSelect={onSelect} introBox={introBox} />}
         <Flags flags={laid.flags} onSelect={onSelect} introBox={introBox} reduced={!!reduced} />
         {c.labels && <NodeLabels data={data} laid={laid} />}
-        {/* near = 1.15r, NOT a dive. Shot at 0.5r the camera ends up INSIDE the
-            2,717-node memory floor and the frame is a blur of out-of-focus
-            blobs — closer stopped meaning clearer several hundred units back.
-            The pointing is done by re-centring on the node while the graph
-            stays whole; `sel` dims everything outside its neighbourhood to 12%,
-            so the torch isolates and the camera only has to aim. */}
-        <FocusDriver pos={focusPos} homeDist={cam} near={radius * 2.2} />
+        {/* NOT a dive — see FOCUS_DIST. The pointing is done by re-centring on
+            the node while the graph stays whole; `sel` dims everything outside
+            its neighbourhood to 12%, so the torch isolates and the camera only
+            has to aim. */}
+        <FocusDriver pos={focusPos} homeDist={cam} near={radius * focusDist} panelPx={focusPanelPx} bias={focusBias} />
       </Spin>
       <OrbitControls autoRotate={false} enableRotate enableZoom enablePan screenSpacePanning enableDamping dampingFactor={0.08} target={[0, 0, 0]} minPolarAngle={0} maxPolarAngle={Math.PI} makeDefault />
       <EffectComposer>
