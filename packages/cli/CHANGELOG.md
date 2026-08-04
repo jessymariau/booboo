@@ -1,5 +1,12 @@
 # @booboo-brain/cli
 
+## 0.5.5
+
+### Patch Changes
+
+- Updated dependencies [7b896af]
+  - @booboo-brain/viewer@0.2.2
+
 ## 0.5.4
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@booboo-brain/viewer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Booboo 3D viewer — the scale-first R3F renderer. Instanced GPU field + tier-LOD. Renders any Booboo graph.",
   "license": "MIT",
   "repository": {
