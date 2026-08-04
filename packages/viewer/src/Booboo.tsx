@@ -840,6 +840,11 @@ function Spin({ orbit, drift, peel, children }: { orbit: number; drift: number; 
 // who grabs the controls afterwards is not fought for the rest of the session.
 // Slower than it wants to be. The move is the whole flex, so it has to read as
 // a decision rather than a snap; 0.055 arrived before the reader's eye did.
+// Expressed per 60fps frame and CONVERTED BY DELTA TIME below, because the
+// marker it chases is inside the drifting Spin group: a raw per-frame lerp
+// closes at whatever rate the client happens to render, so on a slow client the
+// target trails a node that never stops moving and the frame slides forever
+// instead of settling. Watched it happen at ~1fps.
 const FOCUS_EASE = 0.032;
 
 // Multiples of the graph radius, TUNED BY SHOOTING IT. Closer stopped meaning
@@ -857,11 +862,14 @@ function FocusDriver({ pos, homeDist, near, panelPx = 0, bias }: { pos: [number,
   const world = useMemo(() => new THREE.Vector3(), []);
   const arm = useMemo(() => new THREE.Vector3(), []);
   const right = useMemo(() => new THREE.Vector3(), []);
-  useFrame(() => {
+  useFrame((_, dt) => {
     const ctrl = controls as unknown as { target: THREE.Vector3; update: () => void } | null;
     if (!ctrl?.target) return;
     if (pos) engaged.current = true;
     if (!engaged.current) return;
+    // dt is clamped: a backgrounded tab hands back one enormous delta on return,
+    // and closing the whole distance in a single frame is a cut, not a move.
+    const k = 1 - Math.pow(1 - FOCUS_EASE, Math.min(dt, 0.1) * 60);
 
     if (pos && marker.current) marker.current.getWorldPosition(world);
     else world.set(0, 0, 0);
@@ -888,11 +896,11 @@ function FocusDriver({ pos, homeDist, near, panelPx = 0, bias }: { pos: [number,
       world.addScaledVector(right, -Math.max(-0.45, Math.min(0.45, b)) * visW);
     }
 
-    ctrl.target.lerp(world, FOCUS_EASE);
+    ctrl.target.lerp(world, k);
     arm.copy(camera.position).sub(ctrl.target);
     const d = arm.length();
     if (d > 1e-4) {
-      arm.setLength(d + (want - d) * FOCUS_EASE);
+      arm.setLength(d + (want - d) * k);
       camera.position.copy(ctrl.target).add(arm);
     }
     ctrl.update();
