@@ -84,9 +84,11 @@ if (DRY) { console.log(`\n✓ dry run: built ${head.slice(0, 7)}, shipped nothin
 console.log("· deploying");
 let url;
 try {
-  const out = sh("vercel deploy --prod --archive=tgz --yes", { cwd: path.join(root, "web", "dist") });
-  url = out.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("https://")).pop();
-  console.log(`  ✓ ${url}`);
+  // 2>&1 because the CLI prints "Production: <url>" on STDERR; reading stdout
+  // alone gets you an undefined URL next to a successful deploy.
+  const out = sh("vercel deploy --prod --archive=tgz --yes 2>&1", { cwd: path.join(root, "web", "dist") });
+  url = out.match(/https:\/\/[a-z0-9-]+\.vercel\.app/gi)?.pop();
+  console.log(`  ✓ ${url ?? "(deployed; URL not parsed)"}`);
 } catch (e) { die(`vercel deploy failed:\n${e.stdout ?? ""}${e.stderr ?? ""}`); }
 
 // ── 4. prove it, on the real domain ─────────────────────────────────────────
@@ -95,17 +97,22 @@ try {
 console.log("· verifying " + DOMAIN);
 await new Promise((r) => setTimeout(r, 8000));
 
+// fetch, NOT curl. `curl -w "%{http_code}"` through execSync runs under cmd.exe
+// on Windows, which eats the %{...} format string and hands back an empty
+// status — every route read 0 while the site was perfectly healthy. Node's
+// fetch has no shell between it and the request. redirect:"manual" is required
+// or /viewer/'s 307 is followed and reports 200.
 const expect = { "/": 200, "/mcp": 405, "/chart/": 200, "/viewer/": 307, "/api/org": 200, "/version.json": 200 };
 const fail = [];
 for (const [route, want] of Object.entries(expect)) {
   let got = 0;
-  try { got = Number(sh(`curl -s -o /dev/null -w "%{http_code}" ${DOMAIN}${route}`)); } catch { /* got stays 0 */ }
+  try { got = (await fetch(DOMAIN + route, { redirect: "manual" })).status; } catch { /* got stays 0 */ }
   console.log(`  ${got === want ? "✓" : "✗"} ${route.padEnd(14)} ${got} (want ${want})`);
   if (got !== want) fail.push(`${route} returned ${got}, wanted ${want}`);
 }
 
 try {
-  const live = JSON.parse(sh(`curl -s ${DOMAIN}/version.json`));
+  const live = await (await fetch(`${DOMAIN}/version.json`, { cache: "no-store" })).json();
   const ok = live.commit === head;
   console.log(`  ${ok ? "✓" : "✗"} live commit ${live.commit?.slice(0, 7)} ${ok ? "matches" : "DOES NOT MATCH"} ${head.slice(0, 7)}`);
   if (!ok) fail.push(`live commit ${live.commit} != deployed ${head}`);
