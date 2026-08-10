@@ -30,7 +30,12 @@ const DRY = args.includes("--dry-run");
 const FORCE = args.includes("--force");
 const DOMAIN = "https://booboo.fractionalhq.uk";
 
+// sh() CAPTURES, run() STREAMS. Keeping them apart is not tidiness: execSync
+// returns null when stdout is inherited, so a shared helper that ends in
+// .trim() throws on every streamed command and the catch around it reports a
+// build failure that never happened. That cost a deploy cycle here.
 const sh = (cmd, opts = {}) => execSync(cmd, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts }).trim();
+const run = (cmd, opts = {}) => execSync(cmd, { cwd: root, stdio: ["ignore", "inherit", "inherit"], ...opts });
 const die = (msg) => { console.error(`\n✗ ${msg}\n`); process.exit(1); };
 
 // ── 1. the git guard ────────────────────────────────────────────────────────
@@ -63,7 +68,7 @@ for (const cmd of [
   "pnpm -F @booboo-brain/panel build",
   "node scripts/build-web.mjs",
 ]) {
-  try { sh(cmd, { stdio: ["ignore", "inherit", "inherit"] }); }
+  try { run(cmd); }
   catch { die(`build step failed: ${cmd}`); }
 }
 
