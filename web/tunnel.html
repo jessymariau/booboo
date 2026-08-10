@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Booboo · your system has a shape</title>
+<meta name="description" content="2,839 nodes, one JSON contract. Wiring, memory, agents and crons drawn as one rooted brain, and you fly it by scrolling. Open source, MIT." />
+
+<link rel="canonical" href="https://booboo.fractionalhq.uk/" />
+<link rel="icon" type="image/svg+xml" href="./img/favicon.svg" />
+<meta property="og:title" content="Booboo · your system has a shape" />
+<meta property="og:description" content="2,839 nodes, one JSON contract. Wiring, memory, agents and crons drawn as one rooted brain. Open source, MIT." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://booboo.fractionalhq.uk/" />
+<meta property="og:image" content="https://booboo.fractionalhq.uk/img/og.jpg" />
+<meta property="og:image:width" content="2400" />
+<meta property="og:image:height" content="1260" />
+<meta property="og:image:alt" content="The Booboo descent: display type falling through a field of 2,839 luminous nodes." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://booboo.fractionalhq.uk/img/og.jpg" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Instrument+Sans:wght@400;500&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./tunnel.css" />
+</head>
+<body>
+
+<!-- Fixed. First in the DOM so the keyboard reaches it before the footer, and
+     painted over the paper by z-index rather than by document order — the
+     approved build used order, which put the nav last in the tab sequence. -->
+<header class="nav">
+  <h1 class="wordmark">Booboo</h1>
+  <nav class="nav-links">
+    <a href="./viewer/?file=/pemberton.booboo.json">Traversal</a>
+    <a href="https://www.npmjs.com/package/create-booboo" target="_blank" rel="noopener">Quickstart</a>
+    <a href="mailto:hello@fractionalhq.uk">Hosted</a>
+    <a href="https://github.com/jessymariau/booboo" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<!-- ═══════════ THE GRAPH ═══════════
+     The real deployed viewer, same origin, flown by scroll over postMessage.
+     The crop is asymmetric on purpose: the viewer's dossier is 420px wide on the
+     right, so 60/90/440/90 puts it fully out of frame without paying for the
+     symmetric inset that would cost 70% more pixels. -->
+<div class="graph" id="graph">
+  <iframe id="brain" title="the live booboo graph" loading="eager"
+          src="./viewer/?file=/pemberton.booboo.json&amp;chrome=lite"></iframe>
+  <p class="brain-note" id="brainNote">loading the brain…</p>
+</div>
+
+<!-- ═══════════ THE TUNNEL ═══════════
+     Eleven frames, all at the same point on screen. Scroll scrubs one `world`
+     value and every frame's scale/opacity/blur is a function of world minus its
+     own index. The radial scrim is load-bearing: centred display type over the
+     brightest part of an additively-blended field is otherwise unreadable.
+
+     🔒 Changing this deck is not a local edit. tunnel.js carries FRAME_BEAT,
+     which maps each frame to the graph beat that must be lit while it is on
+     screen. Add or remove a frame and you MUST update it there, or the graph
+     silently points at the wrong node. -->
+<div class="tunnel" id="tunnel">
+  <div class="scrim" aria-hidden="true"></div>
+
+  <div class="frame">
+    <p class="kicker">open core · MIT</p>
+    <h2>Your system has a shape.</h2>
+  </div>
+  <div class="frame">
+    <h2 class="hot">You've never seen it.</h2>
+  </div>
+  <div class="frame">
+    <p class="kicker">2,839 nodes · one JSON contract</p>
+    <h2>So we drew it.</h2>
+    <p class="sub">Wiring, memory, agents, crons. One rooted brain.</p>
+  </div>
+  <div class="frame">
+    <p class="kicker">01 · the law</p>
+    <h2>Everything roots at one node.</h2>
+    <p class="node">standard</p>
+  </div>
+  <div class="frame">
+    <h2>One contract at the top, and the whole house boots from it.</h2>
+    <p class="node">standard</p>
+  </div>
+  <div class="frame">
+    <p class="kicker">02 · the department</p>
+    <h2>Ask who owns this.</h2>
+    <p class="node">agent:housekeeping</p>
+  </div>
+  <div class="frame">
+    <h2>The graph answers.</h2>
+    <p class="sub">A parent, a health flag, and everyone reporting in.</p>
+    <p class="node">agent:housekeeping</p>
+  </div>
+  <div class="frame">
+    <p class="kicker">03 · the shift</p>
+    <h2>Down to whoever is on shift.</h2>
+    <p class="sub">Same fields as the general manager. Depth is not a special case.</p>
+    <p class="node">agent:housekeeping-room-attendant-07</p>
+  </div>
+  <div class="frame">
+    <p class="kicker">04 · the ledger</p>
+    <h2>18 July. Standing water in 407.</h2>
+    <p class="sub">Logged at turndown. Flagged critical. Sent up.</p>
+    <p class="node">obs:incident-room-407-leak</p>
+  </div>
+  <div class="frame">
+    <h2 class="hot">The bottom rewrote the top.</h2>
+    <p class="sub">Within a day the house standard itself was amended.</p>
+    <p class="node">obs:incident-room-407-leak</p>
+  </div>
+  <div class="frame">
+    <p class="kicker">one command, on what you already run</p>
+    <h2>$ npx create-booboo</h2>
+  </div>
+</div>
+
+<!-- ═══════════ THE INSTRUMENT ═══════════
+     Names the tier the graph is lighting, so the chrome and the graph can never
+     disagree. It retires across the tail: a depth readout pinned at 100% over a
+     paper footer is chrome that has stopped meaning anything. -->
+<div class="hud-rail" id="hudRail" aria-hidden="true">
+  <div class="hud-scrim"></div>
+  <div class="hud">
+    <div class="hud-row">
+      <span class="tier is-on">root</span>
+      <span class="sep">/</span><span class="tier">the law</span>
+      <span class="sep">/</span><span class="tier">the department</span>
+      <span class="sep">/</span><span class="tier">the shift</span>
+      <span class="sep">/</span><span class="tier">the ledger</span>
+      <span class="depth">depth <span id="depthNum">0</span>%</span>
+    </div>
+    <div class="hud-rule"><div class="hud-fill" id="hudFill"></div></div>
+  </div>
+</div>
+
+<!-- The runway. Nothing lives here: it is the scroll distance the tunnel is
+     scrubbed across. 15600px over a span of 11.4 is the approved pacing. -->
+<div class="runway" aria-hidden="true"></div>
+
+<!-- ═══════════ THE PAPER ═══════════
+     Nothing in a tunnel holds still, so nothing in a tunnel can be read
+     carefully. Anything a visitor must read at leisure lives here, on paper,
+     holding still. That division is the design, not a layout accident. -->
+<footer class="paper">
+  <div class="paper-top">
+    <div class="paper-mark">
+      <h2>Booboo</h2>
+      <p>One rooted brain, built out of what you already run. Open core, MIT, and the same graph you just flew.</p>
+    </div>
+    <div class="paper-cols">
+      <div class="col">
+        <p class="kicker">Quickstart</p>
+        <p class="mono-dim">$ npx create-booboo</p>
+        <a href="https://www.npmjs.com/package/create-booboo" target="_blank" rel="noopener">npm</a>
+        <a href="https://github.com/jessymariau/booboo#readme" target="_blank" rel="noopener">Read the docs</a>
+      </div>
+      <div class="col">
+        <p class="kicker">Source</p>
+        <a href="https://github.com/jessymariau/booboo" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/jessymariau/booboo#mcp" target="_blank" rel="noopener">MCP server</a>
+        <p class="mono-dim">MIT licence</p>
+      </div>
+      <div class="col">
+        <p class="kicker">Hosted</p>
+        <p class="mono-dim">We map your stack into a living brain and keep it running.</p>
+        <a href="mailto:hello@fractionalhq.uk">hello@fractionalhq.uk</a>
+      </div>
+    </div>
+  </div>
+  <div class="paper-foot">
+    <p class="mono-dim">Fractional HQ · open core · MIT</p>
+    <a href="https://fractionalhq.uk" target="_blank" rel="noopener">fractionalhq.uk</a>
+  </div>
+</footer>
+
+<script type="module" src="./tunnel.js"></script>
+</body>
+</html>

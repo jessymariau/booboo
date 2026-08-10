@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Booboo">
+  <rect width="32" height="32" rx="7" fill="#120F0B"/>
+  <path d="M16 10.5v4M16 18.5v4" stroke="#D9A05B" stroke-width="1.1" stroke-linecap="round" opacity=".45"/>
+  <circle cx="16" cy="7.5" r="3.1" fill="#D9A05B"/>
+  <circle cx="16" cy="16" r="2.2" fill="#E8C877" opacity=".85"/>
+  <circle cx="16" cy="24.5" r="1.5" fill="#8BE9B0" opacity=".8"/>
+</svg>

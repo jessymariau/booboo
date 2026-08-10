@@ -60,7 +60,28 @@ for (const [src, app, pkg] of [
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
-for (const f of ["index.html", "styles.css", "main.js", "tokens.css"]) {
+// THE ROOT IS THE DESCENT TUNNEL, 2026-08-10.
+//
+// It got here the hard way. The tunnel was built in Framer, and the attempt to
+// serve it on this domain for free was a Vercel rewrite proxying "/" to the
+// published Framer URL. That broke the page's own scroll-pin mechanic: the nav
+// and graph lost their fixed positioning and scrolled away with the document,
+// while serving BYTE-IDENTICAL content to the working Framer URL (same ETag).
+// A follow-up CSS fix made it worse for a textbook reason — a transform on an
+// ancestor creates a new containing block, so position:fixed descendants anchor
+// to that ancestor instead of the viewport, which is the exact mechanic a
+// scrollytelling page is made of. Both were reverted. Root cause of the proxy
+// failure was never found, and chasing it further would have bought a page we
+// still could not put our own favicon or <head> on.
+//
+// So the mechanic came home instead. web/tunnel.* is the same engine, same
+// measured constants and the same copy deck, as plain HTML/CSS/JS in this
+// repo — which means own head, own favicon, real breakpoints, no vendor
+// runtime deciding how our fixed layers behave, and no £8/mo. The previous
+// cinematic landing (index.html/styles.css/main.js) is still in web/ and in
+// git; it is simply no longer what "/" serves.
+await cp(path.join(root, "web", "tunnel.html"), path.join(out, "index.html"));
+for (const f of ["tunnel.css", "tunnel.js"]) {
   await cp(path.join(root, "web", f), path.join(out, f));
 }
 // page imagery: the product photographing itself. A brand landing with no
@@ -142,6 +163,9 @@ await writeFile(
         },
       ],
       rewrites: [
+        // "/" → Framer rewrite REMOVED 2026-08-10 (see build-web.mjs header
+        // comment above the file copy step for why). Root falls back to the
+        // static index.html restored below.
         { source: "/mcp", destination: "/api/mcp" },
         // the panel app's same-origin API, funnelled into one read-only function
         { source: "/api/org", destination: "/api/panelapi?r=org" },
@@ -163,6 +187,18 @@ await writeFile(
     2,
   ) + "\n",
 );
+
+// THE DEPLOY LINK SURVIVES THE WIPE. web/dist is the deploy root, so the CLI
+// looks for web/dist/.vercel to know which project it is pushing to — and the
+// rm at the top of this script deletes it on every single run. That has already
+// caused one deploy into the WRONG PROJECT. Re-seed it from the repo-root link.
+// existsSync-guarded because .vercel is local-only and absent on Vercel's own CI,
+// where this script also runs.
+const linkSrc = path.join(root, ".vercel", "project.json");
+if (existsSync(linkSrc)) {
+  await mkdir(path.join(out, ".vercel"), { recursive: true });
+  await cp(linkSrc, path.join(out, ".vercel", "project.json"));
+}
 
 const listed = await readdir(out);
 console.log(`✓ web/dist ready → ${listed.join(", ")}`);

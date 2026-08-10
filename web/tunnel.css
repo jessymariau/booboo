@@ -1,0 +1,424 @@
+/* Booboo — the Descent tunnel.
+   Ported out of Framer 2026-08-10 so the page can live on its own domain with
+   its own head, its own favicon and real breakpoints. Every tuned number here
+   came from the approved build; see tunnel.js for why each one is what it is.
+
+   THE ONE STRUCTURAL CHANGE FROM THE FRAMER BUILD: that canvas was a fixed
+   1440px with no breakpoint, which is what made it pin to the left of a wide
+   viewport. Centring it with a transform on an ancestor is the trap that broke
+   the page twice — a transform creates a new containing block, so every
+   position:fixed descendant stops pinning to the viewport and starts scrolling
+   with the page, which is precisely the mechanic this page is made of. The fix
+   is not to centre a fixed-width canvas at all. Everything below is fluid. */
+
+:root {
+  --ground: #120F0B;      /* /Ink/Ground */
+  --ink: #F2ECDF;         /* /Paper/Paper, used as text on ground */
+  --dim: #B5A896;         /* /Text/Dim */
+  --accent: #D9A05B;      /* /Accent/Brass */
+  --accent-hi: #F0C084;   /* /Accent/Brass Hi */
+  --live: #E8C877;        /* the instrument's active tone */
+  --paper: #F2ECDF;
+  --paper-ink: #221C13;
+  --paper-dim: #4A4038;
+  /* Brass at #D9A05B is tuned for near-black and goes sun-bleached on cream, so
+     paper gets a deepened brass holding the same hue at usable contrast. */
+  /* MEASURED AGAINST --paper, NOT PICKED. rgb(150,98,30) resolved to 4.39:1 on
+     #F2ECDF, which fails WCAG AA (4.5) for the 12px footer links — scripts/a11y.mjs
+     caught all six. This is 4.97:1 at the same hue. Re-run a11y.mjs after any
+     change here rather than trusting the swatch. */
+  --paper-link: rgb(140, 90, 26);
+  --paper-link-hi: rgb(112, 71, 18);
+
+  --display: Fraunces, ui-serif, Georgia, serif;
+  --body: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --gutter: 44px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: auto; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+/* ── the graph ───────────────────────────────────────────────────────────── */
+
+.graph {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--ground);
+}
+
+/* Asymmetric crop, measured against the viewer's real chrome: HUD ends y=75,
+   hint sits y=1062, dossier starts x=1520. Cropping 440 off the right puts the
+   dossier fully out of frame for a fraction of the pixels a symmetric inset
+   would cost. */
+.graph iframe {
+  position: absolute;
+  top: -90px;
+  left: -60px;
+  width: calc(100% + 500px);
+  height: calc(100% + 180px);
+  border: 0;
+  display: block;
+  /* SCROLL CAPTURE IS THE KILLER — an iframe eats wheel events and the page
+     stops scrubbing. This embed is scenery; it is never interactive here. */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(.16, 1, .3, 1);
+}
+.graph.is-loaded iframe { opacity: 1; }
+
+.brain-note {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.45;
+  text-align: center;
+}
+.graph.is-loaded .brain-note { display: none; }
+.brain-note a { color: inherit; text-decoration: underline; }
+
+/* ── the tunnel ──────────────────────────────────────────────────────────── */
+
+.tunnel {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.72;
+  background: radial-gradient(
+    ellipse 62% 46% at 50% 50%,
+    var(--ground) 0%,
+    var(--ground) 34%,
+    transparent 78%
+  );
+}
+
+.frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: min(760px, 82vw);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: 50% 50%;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.frame .kicker {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* 62px is the approved size and it is held at 1440 and above; below that it
+   scales rather than crowding a narrower frame. */
+.frame h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(34px, 4.3vw, 62px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.frame h2.hot { color: var(--accent); font-style: italic; }
+
+.frame .sub {
+  margin: 0;
+  font-family: var(--body);
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--dim);
+  max-width: 520px;
+}
+
+.frame .node {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--dim);
+  opacity: 0.75;
+}
+
+/* ── the instrument ──────────────────────────────────────────────────────── */
+
+.hud-rail {
+  position: fixed;
+  left: var(--gutter);
+  bottom: 40px;
+  width: min(740px, calc(100vw - var(--gutter) * 2));
+  z-index: 3;
+  pointer-events: none;
+  transition: opacity 200ms linear;
+}
+
+/* Load-bearing, not decoration: without it the breadcrumb and its rule render
+   straight through whatever the graph is doing, and chrome sitting on raw
+   canvas is the fastest "unfinished" signal a page can give. Full-bleed via a
+   negative inset because the rail is inset from the page edge. */
+.hud-scrim {
+  position: absolute;
+  left: calc(var(--gutter) * -1);
+  bottom: -61px;
+  width: 100vw;
+  height: 190px;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(to top, var(--ground) 0%, var(--ground) 34%, transparent 100%);
+}
+
+.hud {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.hud-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+
+.hud .tier {
+  color: var(--dim);
+  opacity: 0.5;
+  transition: color 260ms cubic-bezier(.16, 1, .3, 1), opacity 260ms cubic-bezier(.16, 1, .3, 1);
+}
+.hud .tier.is-on { color: var(--live); opacity: 1; }
+.hud .sep { color: var(--dim); opacity: 0.3; }
+.hud .depth { margin-left: auto; color: var(--dim); opacity: 0.5; white-space: nowrap; }
+
+.hud-rule { position: relative; width: 100%; height: 1px; background: rgba(242, 236, 223, 0.11); }
+.hud-fill { position: absolute; left: 0; top: 0; height: 1px; width: 0; background: var(--live); }
+
+/* ── the nav ─────────────────────────────────────────────────────────────── */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 76px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 var(--gutter);
+  background: var(--ground);
+}
+
+.wordmark {
+  /* An h1, so the page has one — the frames are all h2 and the document had no
+     top-level heading at all. margin:0 because a UA h1 margin would break the
+     nav's flex row. */
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.nav-links { display: flex; align-items: center; gap: 30px; }
+
+.nav-links a {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 160ms cubic-bezier(.16, 1, .3, 1);
+}
+/* The affordance is never carried by colour alone. */
+.nav-links a:hover { color: var(--accent-hi); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── the runway ──────────────────────────────────────────────────────────── */
+
+.runway { height: 15600px; }
+
+/* ── the paper ───────────────────────────────────────────────────────────── */
+
+/* min-height 100vh, not the approved build's flat 900px, so the tail the
+   drivers exclude (tailVh = 1) is exactly the footer at every window height.
+   At 900px tall they are the same page. */
+.paper {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--paper-ink);
+  padding: 150px 96px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 64px;
+}
+
+.paper-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 80px; flex-wrap: wrap; }
+
+.paper-mark { display: flex; flex-direction: column; gap: 22px; }
+.paper-mark h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 52px;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  color: var(--paper-ink);
+}
+.paper-mark p {
+  margin: 0;
+  max-width: 360px;
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.6;
+  letter-spacing: 0.004em;
+  color: var(--paper-dim);
+}
+
+.paper-cols { display: flex; gap: 72px; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; max-width: 230px; }
+
+.paper .kicker {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+}
+.paper .mono-dim {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+
+.paper a {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--paper-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 160ms cubic-bezier(.16, 1, .3, 1);
+}
+.paper a:hover { color: var(--paper-link-hi); }
+.paper :focus-visible { outline-color: var(--paper-link); }
+
+.paper-foot { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+/* ═══════════ FLAT ═══════════
+   Below 810px, and for anyone who asked for reduced motion, this stops being a
+   zoom at all. That is deliberate: the illusion depends on real perspective
+   motion at speed, and "the animation, off" would leave a page whose copy never
+   arrives. Every frame becomes a plain block in a readable stack, the graph
+   becomes a still hero, and the runway and instrument retire.
+
+   ⚠️ 810 is duplicated in tunnel.js. Change both or the driver will keep
+   painting frames the CSS has already put back into flow. */
+@media (max-width: 810px), (prefers-reduced-motion: reduce) {
+  .graph { position: relative; inset: auto; height: 58vh; min-height: 320px; }
+  .graph iframe { top: 0; left: 0; width: 100%; height: 100%; }
+
+  .tunnel {
+    position: static;
+    height: auto;
+    overflow: visible;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 72px;
+    padding: 88px 22px 96px;
+  }
+  .scrim { display: none; }
+
+  .frame {
+    position: static;
+    width: auto;
+    transform: none;
+    filter: none;
+    opacity: 1;
+    visibility: visible;
+    align-items: flex-start;
+    text-align: left;
+    gap: 14px;
+  }
+  .frame h2 { font-size: clamp(30px, 8.4vw, 44px); }
+
+  .hud-rail { display: none; }
+  .runway { display: none; }
+
+  .nav { height: 64px; padding: 0 22px; }
+  .nav-links { gap: 18px; }
+  .nav-links a { font-size: 11px; }
+
+  .paper { min-height: 0; padding: 88px 22px 40px; gap: 56px; }
+  .paper-top { gap: 56px; }
+  .paper-cols { gap: 40px; }
+  .paper-mark h2 { font-size: 40px; }
+}
+
+/* Very narrow: the nav's four links stop fitting beside the wordmark. */
+@media (max-width: 560px) {
+  .nav { height: auto; padding: 12px 18px; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .nav-links { flex-wrap: wrap; gap: 14px; }
+}
