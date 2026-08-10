@@ -304,13 +304,17 @@ body {
 .paper {
   position: relative;
   z-index: 2;
-  min-height: 100vh;
+  /* NO min-height. It was 100vh so the excluded tail matched a footer that was
+     exactly one screen; the driver measures the runway now, so the paper is free
+     to hug its content. Forcing a full screen here is what put ~600px of empty
+     cream under the links, twice. Ending a little short is better: the last
+     screen shows the tail of act two, still on the graph, above the paper. */
   background: var(--paper);
   color: var(--paper-ink);
-  padding: 150px 96px 56px;
+  padding: 110px 96px 56px;
   display: flex;
   flex-direction: column;
-  gap: 96px;
+  gap: 64px;
 }
 /* Keeps the baseline on the baseline when the content is shorter than the window. */
 .paper-foot { margin-top: auto; }
@@ -362,107 +366,141 @@ body {
   color: var(--paper-dim);
 }
 
-/* ── the contract ────────────────────────────────────────────────────────── */
+/* ═══════════ ACT TWO ═══════════
+   The fall is over, the flight is not. These two screens scroll OVER the live
+   graph, so they carry no opaque ground: the camera has landed on
+   obs:incident-room-407-leak and holds it lit while you read that node's JSON.
 
-/* minmax(0, 1fr) on the code column is load-bearing: a grid track defaults to
-   min-content, so a long unbroken string inside the <pre> would push the track
-   wider than the page and give the whole document a horizontal scrollbar. */
-.contract {
+   ⚠️ SIBLINGS OF THE FIXED LAYERS, NEVER ANCESTORS. A transform, filter,
+   backdrop-filter, perspective or will-change on anything CONTAINING .graph /
+   .tunnel / .hud-rail creates a containing block and kills the pin. Safe here
+   only because these panels contain none of them. check-descent --poison is the
+   guard; run it after touching this section. */
+.act2 { position: relative; z-index: 2; }
+
+.act {
+  min-height: 100vh;
+  padding: 120px 96px;
   display: grid;
-  grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
-  gap: 72px;
-  align-items: start;
+  align-content: center;
+  color: var(--ink);
 }
-.contract-say { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.act-contract { grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: 72px; align-items: center; }
+.act-handover { grid-template-columns: minmax(0, 1fr) auto; gap: 72px; align-items: end; }
 
-.contract h3,
-.handover h3 {
+.act-say { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+/* A local wash, not a full-bleed ground. Full-bleed would be the paper again in
+   a darker colour, and the point is that the graph stays visible and moving. */
+.act-say::before {
+  content: "";
+  position: absolute;
+  inset: -60px -90px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 68% 58% at 34% 50%,
+    var(--ground) 0%, var(--ground) 46%, transparent 84%);
+  opacity: 0.9;
+}
+
+.act h3 {
   margin: 0;
-  max-width: 16ch;
+  max-width: 17ch;
   font-family: var(--display);
   font-weight: 500;
-  font-size: 30px;
-  line-height: 1.18;
+  font-size: 32px;
+  line-height: 1.16;
   letter-spacing: -0.015em;
-  color: var(--paper-ink);
+  color: var(--ink);
 }
-.contract p,
-.handover p {
+.act-handover h3 { max-width: 22ch; }
+.act p {
   margin: 0;
   max-width: 42ch;
   font-family: var(--body);
   font-size: 16px;
   line-height: 1.62;
-  color: var(--paper-dim);
+  color: var(--dim);
 }
-.contract-note { color: var(--paper-ink) !important; }
+.act-note { color: var(--ink) !important; }
 
-.contract-code {
+.act .kicker {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.act a {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.act a:hover { color: var(--accent-hi); }
+
+/* Its own dark glass so the JSON stays readable over whatever the graph is
+   doing behind it. pre-wrap rather than a sideways scroller: the note field is
+   the sentence the whole section is about. */
+.act-code {
   margin: 0;
   padding: 26px 28px;
-  background: rgba(34, 28, 19, 0.045);
-  border: 1px solid rgba(34, 28, 19, 0.12);
+  background: rgba(6, 5, 3, 0.86);
+  border: 1px solid rgba(242, 236, 223, 0.14);
   border-radius: 3px;
   font-family: var(--mono);
   font-size: 12.5px;
   line-height: 1.75;
-  color: var(--paper-ink);
-  /* pre-wrap, not a scroller: the note field is one long string and a reader
-     should not have to drag a code box sideways to finish the sentence that the
-     whole section is about. overflow-x stays as the belt to that braces. */
+  color: var(--ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   overflow-x: auto;
   tab-size: 2;
 }
-.contract-code mark {
-  background: rgba(217, 160, 91, 0.34);
-  color: var(--paper-ink);
-  padding: 1px 2px;
+.act-code mark {
+  background: rgba(217, 160, 91, 0.26);
+  color: var(--accent-hi);
+  padding: 1px 3px;
   border-radius: 2px;
 }
 
-/* ── the handover ────────────────────────────────────────────────────────── */
-.handover {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 64px;
-  flex-wrap: wrap;
-  padding-top: 44px;
-  border-top: 1px solid rgba(34, 28, 19, 0.16);
+/* Needs its own wash: .act-say::before only covers the left column, and the fine
+   print under the button was landing on the brightest part of the node field. */
+.act-do { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.act-do::before {
+  content: "";
+  position: absolute;
+  inset: -46px -64px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 66% 62% at 50% 50%,
+    var(--ground) 0%, var(--ground) 44%, transparent 84%);
+  opacity: 0.9;
 }
-.handover-say { display: flex; flex-direction: column; gap: 18px; }
-.handover h3 { max-width: 22ch; }
-.handover-do { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-
-.paper a.cta {
-  /* inline-flex, not inline: an inline anchor's box is driven by line-height, so
-     the padding paints but the hit target stays text-height. */
+.act a.cta {
   display: inline-flex;
   align-items: center;
   min-height: 48px;
   padding: 15px 28px;
-  background: var(--paper-ink);
-  color: var(--paper);
+  background: var(--ink);
+  color: var(--ground);
   border-radius: 2px;
-  font-family: var(--mono);
   font-size: 13px;
-  letter-spacing: 0.075em;
-  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   transition: background 160ms cubic-bezier(.16, 1, .3, 1);
 }
-.paper a.cta:hover { background: var(--paper-link-hi); color: var(--paper); }
-.paper a.cta:focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 3px; }
-
-.handover-note { max-width: 34ch; font-size: 14px !important; }
-.handover-note code {
+.act a.cta:hover { background: var(--accent-hi); color: var(--ground); }
+.act a.cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.act-fine { max-width: 34ch; font-size: 14px !important; }
+.act-fine code {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--paper-ink);
-  background: rgba(34, 28, 19, 0.07);
+  color: var(--ink);
+  background: rgba(242, 236, 223, 0.1);
   padding: 2px 5px;
   border-radius: 2px;
 }
@@ -583,12 +621,16 @@ body {
   .shape dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 32px; }
   .stat dd { font-size: 26px; }
 
-  .contract { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .contract h3, .handover h3 { font-size: 26px; max-width: 18ch; }
-  .contract-code { padding: 20px 18px; font-size: 11.5px; line-height: 1.7; }
-
-  .handover { flex-direction: column; align-items: flex-start; gap: 28px; padding-top: 36px; }
-  .paper a.cta { padding: 14px 22px; }
+  /* ACT TWO GOES FLAT TOO. The graph is a still hero at the top of this layout,
+     not a fixed backdrop, so there is nothing behind these panels to see through
+     to and nothing to read over. They become ordinary stacked blocks and the
+     local wash is removed, or it would sit on the page as a grey smear. */
+  .act { min-height: 0; padding: 0; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+  .act2 { display: flex; flex-direction: column; gap: 64px; padding: 8px 22px 0; }
+  .act-say::before { display: none; }
+  .act h3, .act-handover h3 { font-size: 26px; max-width: 18ch; }
+  .act-code { padding: 20px 18px; font-size: 11.5px; line-height: 1.7; }
+  .act a.cta { padding: 14px 22px; }
 }
 
 /* Very narrow: the nav's four links stop fitting beside the wordmark. */

@@ -55,8 +55,24 @@ const LEAD = 1.4;        /* overrun past the last frame, so you land in the pape
    to be exactly one viewport tall and made it impossible to put real content
    down there: grow the footer and the depth counter keeps climbing while you are
    already reading it. Reading the element removes the coupling entirely. */
-const paper = document.querySelector(".paper");
-const tailPx = () => (paper ? paper.offsetHeight : window.innerHeight);
+const runway = document.querySelector(".runway");
+const act2 = document.querySelector(".act2");
+/* THE DESCENT LASTS EXACTLY AS LONG AS THE RUNWAY, which is the honest statement
+   of the thing: the runway IS the scroll distance the tunnel is scrubbed across.
+   Measuring it directly beats subtracting a tail, because there are now two
+   things below it (act two, then the paper) and any sum of them is a constant
+   waiting to drift. The fixed layers take no flow space, so the runway is the
+   first in-flow block and its offsetTop is 0. */
+const descentPx = () =>
+  runway && runway.offsetHeight
+    ? runway.offsetTop + runway.offsetHeight - window.innerHeight
+    : document.documentElement.scrollHeight - window.innerHeight;
+
+/* How far the camera keeps easing back once the fall has landed. It only ever
+   goes OUTWARD: below about 2.2 node radii the camera is inside the 2,717-node
+   ledger floor and the frame turns into a dim wash, and DOLLY_TO is already
+   2.45. Reading over a graph that is still creeping is the point of act two. */
+const ACT2_LIFT = 0.6;
 const EASE_COPY = 0.1;
 const EASE_GRAPH = 0.07; /* deliberately slower than the copy: the graph settles
                             into each beat just behind the sentence. */
@@ -212,14 +228,16 @@ calm.addEventListener("change", syncMode);
 function progress() {
   const doc = document.scrollingElement || document.documentElement;
   const y = window.scrollY || doc.scrollTop || 0;
-  /* The descent finishes exactly as the paper starts entering from the bottom. */
-  const max = doc.scrollHeight - window.innerHeight - tailPx();
+  const max = descentPx();
+  /* Progress through act two, which begins where the descent ends. */
+  const actH = act2 ? act2.offsetHeight : 0;
+  const after = actH > 0 ? clamp((y - max) / actH) : 0;
   /* Published so a checker can drive the same positions the page uses instead of
      re-deriving them from a duplicated constant. scripts/check-descent.mjs reads
      it and falls back to the old formula on builds that do not expose it, which
      is how it still runs unchanged against the Framer reference. */
   window.__descentMax = max;
-  return { y, max, p: max > 0 ? clamp(y / max) : 0 };
+  return { y, max, after, p: max > 0 ? clamp(y / max) : 0 };
 }
 
 /* ── the copy ────────────────────────────────────────────────────────────── */
@@ -283,7 +301,7 @@ function sizesAt(a, b, t) {
   return out;
 }
 
-function driveGraph(cur) {
+function driveGraph(cur, after = 0) {
   const win = brain.contentWindow;
   if (!win || !ready) return;
 
@@ -325,7 +343,7 @@ function driveGraph(cur) {
     typeof nearest.focus === "string" ? nearest.focus :
     typeof nearest.sel === "string" ? nearest.sel :
     lastFocus;
-  const dist = DOLLY_FROM + (DOLLY_TO - DOLLY_FROM) * cur;
+  const dist = DOLLY_FROM + (DOLLY_TO - DOLLY_FROM) * cur + ACT2_LIFT * after;
   const movedEnough = !(Math.abs(dist - lastDist) < DOLLY_STEP);
 
   if (chainNode && (chainNode !== lastFocus || movedEnough)) {
@@ -346,10 +364,12 @@ function paintHud(p, y, max, world) {
   /* It retires when the descent does: a depth readout pinned at 100% over a
      paper footer is chrome that has stopped meaning anything, and its dark
      scrim would be sitting on a cream ground. */
-  /* Retires across ONE viewport, not across the whole paper: the footer is now
-     taller than the window, and fading the instrument over its full height would
-     leave a depth readout sitting on cream halfway down the contract. */
-  const tail = window.innerHeight;
+  /* Retires across HALF a viewport. Act two's copy is vertically centred in its
+     own screen, so as it rises into frame it sweeps straight through the rail's
+     line: measured at max + 0.28 of act two, the breadcrumb was still at 0.44
+     opacity and printing through "Here it is, verbatim". Gone by the time the
+     copy is readable. */
+  const tail = window.innerHeight * 0.5;
   const past = tail > 0 ? clamp((y - max) / tail) : 0;
   hudRail.style.opacity = String(1 - past);
 
@@ -374,14 +394,16 @@ function paintHud(p, y, max, world) {
 
 let curCopy = 0;
 let curGraph = 0;
+let curAfter = 0;
 
 function tick() {
-  const { y, max, p } = progress();
+  const { y, max, p, after } = progress();
   curCopy += (p - curCopy) * EASE_COPY;
   curGraph += (p - curGraph) * EASE_GRAPH;
+  curAfter += (after - curAfter) * EASE_GRAPH;
 
   paintFrames(curCopy * SPAN);
-  driveGraph(curGraph);
+  driveGraph(curGraph, curAfter);
   paintHud(p, y, max, curCopy * SPAN);
 
   raf = requestAnimationFrame(tick);

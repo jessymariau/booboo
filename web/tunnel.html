@@ -140,6 +140,61 @@
      scrubbed across. 15600px over a span of 11.4 is the approved pacing. -->
 <div class="runway" aria-hidden="true"></div>
 
+<!-- ═══════════ ACT TWO ═══════════
+     The fall ends here, but the flight does not. These two screens scroll OVER
+     the same live graph, which is why they carry no opaque ground of their own:
+     the camera has landed on obs:incident-room-407-leak and holds it, lit, while
+     you read that exact node's JSON. That coincidence is the whole pitch. The
+     copy frames are finished and gone by now; only the graph is still moving.
+
+     ⚠️ These sections are SIBLINGS of the fixed layers, never ancestors. Putting
+     a transform, filter, backdrop-filter, perspective or will-change on anything
+     that CONTAINS .graph / .tunnel / .hud-rail creates a new containing block and
+     kills the pin. On these panels it is safe, because they contain none of them. -->
+<section class="act2">
+  <div class="act act-contract">
+    <div class="act-say">
+      <p class="kicker">the contract</p>
+      <h3>You just watched this node rewrite the house standard.</h3>
+      <p>Here it is, verbatim. One object in a JSON file, one of 2,839 in the graph still turning behind it.</p>
+      <p class="act-note">No database. No schema to migrate, nothing to keep running. An agent appends an object and the shape of the house changes.</p>
+      <a href="./snapshot.json">Read the whole file</a>
+    </div>
+    <pre class="act-code" tabindex="0" role="group" aria-label="The room 407 incident node, as stored in the booboo file"><code>{
+  "id": "obs:incident-room-407-leak",
+  "type": "observation",
+  "layer": "ledger",
+  "label": "🔴 Water leak — Room 407",
+  "weight": 0.4,
+  "tier": 3,
+  "parent": "bucket:housekeeping",
+  "cluster": "housekeeping",
+  "data": {
+    "kind": "incident",
+    "severity": "major",
+    "flag": "critical",
+    "room": "407",
+    "loggedBy": "agent:housekeeping-room-attendant-07",
+    "escalatedTo": "agent:engineering",
+    "note": "Standing water at turndown, east wall saturated. Riser isolated; 405/409 OOS as precaution. <mark>House Standard § 14 amended next morning.</mark>",
+    "date": "2026-07-18T14:09:02.049Z"
+  }
+}</code></pre>
+  </div>
+
+  <div class="act act-handover">
+    <div class="act-say">
+      <p class="kicker">take the controls</p>
+      <h3>That run was on rails. Nothing steers this one but you.</h3>
+      <p>Same file, same 2,839 nodes. Drag to turn it, scroll to go deeper, click any node to read what it knows.</p>
+    </div>
+    <div class="act-do">
+      <a class="cta" href="./viewer/?file=/pemberton.booboo.json">Open the live graph</a>
+      <p class="act-fine">Pointed at a hotel here. <code>npx create-booboo</code> aims it at whatever you already run.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════ THE PAPER ═══════════
      Nothing in a tunnel holds still, so nothing in a tunnel can be read
      carefully. Anything a visitor must read at leisure lives here, on paper,
@@ -169,57 +224,6 @@
     </div>
   </div>
 
-  <!-- ═══════════ THE CONTRACT ═══════════
-       The tunnel's own claim is "2,839 nodes · one JSON contract" and until now
-       the page never showed the contract. This is the node from the final beat,
-       verbatim out of pemberton.booboo.json, including the line the climax is
-       about. Do not paraphrase it or trim it for width: the whole value is that
-       a reader can diff it against /snapshot.json and find it identical. -->
-  <section class="contract">
-    <div class="contract-say">
-      <p class="kicker">the contract</p>
-      <h3>You just watched this node rewrite the house standard.</h3>
-      <p>Here it is, verbatim. One object in a JSON file, one of 2,839 in the graph you just fell through.</p>
-      <p class="contract-note">No database. No schema to migrate, nothing to keep running. An agent appends an object and the shape of the house changes.</p>
-      <a href="./snapshot.json">Read the whole file</a>
-    </div>
-    <pre class="contract-code" tabindex="0" role="group" aria-label="The room 407 incident node, as stored in the booboo file"><code>{
-  "id": "obs:incident-room-407-leak",
-  "type": "observation",
-  "layer": "ledger",
-  "label": "🔴 Water leak — Room 407",
-  "weight": 0.4,
-  "tier": 3,
-  "parent": "bucket:housekeeping",
-  "cluster": "housekeeping",
-  "data": {
-    "kind": "incident",
-    "severity": "major",
-    "flag": "critical",
-    "room": "407",
-    "loggedBy": "agent:housekeeping-room-attendant-07",
-    "escalatedTo": "agent:engineering",
-    "note": "Standing water at turndown, east wall saturated. Riser isolated; 405/409 OOS as precaution. <mark>House Standard § 14 amended next morning.</mark>",
-    "date": "2026-07-18T14:09:02.049Z"
-  }
-}</code></pre>
-  </section>
-
-  <!-- ═══════════ THE HANDOVER ═══════════
-       They just rode 15,600px on rails. The viewer is real and already deployed,
-       and until now the only route to it was a nav link reading "Traversal",
-       which means nothing to a stranger. -->
-  <section class="handover">
-    <div class="handover-say">
-      <p class="kicker">take the controls</p>
-      <h3>That run was on rails. Nothing steers this one but you.</h3>
-      <p>Same file, same 2,839 nodes. Drag to turn it, scroll to go deeper, click any node to read what it knows.</p>
-    </div>
-    <div class="handover-do">
-      <a class="cta" href="./viewer/?file=/pemberton.booboo.json">Open the live graph</a>
-      <p class="handover-note">Pointed at a hotel here. <code>npx create-booboo</code> aims it at whatever you already run.</p>
-    </div>
-  </section>
 
   <div class="paper-cols">
       <div class="col">
