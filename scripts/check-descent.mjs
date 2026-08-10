@@ -160,10 +160,14 @@ try {
 
   if (SHOT_DIR) mkdirSync(SHOT_DIR, { recursive: true });
 
-  const geom = await page.eval(`(() => { const d = document.scrollingElement || document.documentElement; return { docH: d.scrollHeight, innerH: innerHeight, innerW: innerWidth }; })()`);
-  // tailVh = 1: the last viewport-height of document is the paper footer and is
-  // deliberately outside the descent.
-  const max = geom.docH - geom.innerH * 2;
+  // ASK THE PAGE WHERE ITS DESCENT ENDS, do not re-derive it. The port publishes
+  // window.__descentMax because its footer is taller than one viewport, so the
+  // old "docH - innerH * 2" would sample past the end and read the last few
+  // positions off the footer instead of the tunnel. The fallback keeps this file
+  // running unchanged against the Framer reference, whose tail really is one
+  // viewport — which is the whole reason the two builds stay comparable.
+  const geom = await page.eval(`(() => { const d = document.scrollingElement || document.documentElement; return { docH: d.scrollHeight, innerH: innerHeight, innerW: innerWidth, published: typeof window.__descentMax === "number" ? window.__descentMax : null }; })()`);
+  const max = geom.published ?? geom.docH - geom.innerH * 2;
 
   for (const p of POSITIONS) {
     await page.eval(`scrollTo(0, ${Math.round(Math.max(0, max) * p)}); "ok"`);

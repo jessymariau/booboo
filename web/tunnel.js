@@ -48,10 +48,15 @@ const BASE = 3.4;        /* zoom base. Lower and the departing frame never gets
                             the incoming copy. */
 const LEAD = 1.4;        /* overrun past the last frame, so you land in the paper
                             on pure graph rather than on a held sentence. */
-const TAIL_VH = 1;       /* viewport-heights of non-descent content below the
-                            last frame — the paper footer. Progress is mapped
-                            across the whole document, so without this the
-                            footer steals part of the descent. */
+/* THE TAIL IS MEASURED, NOT ASSUMED. It is the non-descent content below the
+   last frame (the paper footer), and progress is mapped across the whole
+   document, so without excluding it the footer steals part of the descent.
+   This used to be the constant `TAIL_VH = 1`, which silently required the paper
+   to be exactly one viewport tall and made it impossible to put real content
+   down there: grow the footer and the depth counter keeps climbing while you are
+   already reading it. Reading the element removes the coupling entirely. */
+const paper = document.querySelector(".paper");
+const tailPx = () => (paper ? paper.offsetHeight : window.innerHeight);
 const EASE_COPY = 0.1;
 const EASE_GRAPH = 0.07; /* deliberately slower than the copy: the graph settles
                             into each beat just behind the sentence. */
@@ -207,7 +212,13 @@ calm.addEventListener("change", syncMode);
 function progress() {
   const doc = document.scrollingElement || document.documentElement;
   const y = window.scrollY || doc.scrollTop || 0;
-  const max = doc.scrollHeight - window.innerHeight * (1 + TAIL_VH);
+  /* The descent finishes exactly as the paper starts entering from the bottom. */
+  const max = doc.scrollHeight - window.innerHeight - tailPx();
+  /* Published so a checker can drive the same positions the page uses instead of
+     re-deriving them from a duplicated constant. scripts/check-descent.mjs reads
+     it and falls back to the old formula on builds that do not expose it, which
+     is how it still runs unchanged against the Framer reference. */
+  window.__descentMax = max;
   return { y, max, p: max > 0 ? clamp(y / max) : 0 };
 }
 
@@ -335,7 +346,10 @@ function paintHud(p, y, max, world) {
   /* It retires when the descent does: a depth readout pinned at 100% over a
      paper footer is chrome that has stopped meaning anything, and its dark
      scrim would be sitting on a cream ground. */
-  const tail = Math.max(0, TAIL_VH) * window.innerHeight;
+  /* Retires across ONE viewport, not across the whole paper: the footer is now
+     taller than the window, and fading the instrument over its full height would
+     leave a depth readout sitting on cream halfway down the contract. */
+  const tail = window.innerHeight;
   const past = tail > 0 ? clamp((y - max) / tail) : 0;
   hudRail.style.opacity = String(1 - past);
 

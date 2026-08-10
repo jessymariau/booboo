@@ -149,8 +149,79 @@
     <div class="paper-mark">
       <h2>Booboo</h2>
       <p>One rooted brain, built out of what you already run. Open core, MIT, and the same graph you just flew.</p>
+      <!-- The descent narrates a dated incident at a named hotel. Without this line
+           a reader can reasonably take the whole thing for a client case study, and
+           there is no client. Say it on paper, where things hold still. -->
+      <p class="disclose">The Pemberton Grand is invented. The file format, the renderer and the MCP server are not, and this page is running all three.</p>
     </div>
-    <div class="paper-cols">
+
+    <!-- Every number here is counted out of the file this page loads, not quoted
+         from a spec. If the deck or the data changes, re-count; do not nudge. -->
+    <div class="shape">
+      <p class="kicker">the file</p>
+      <dl>
+        <div class="stat"><dt>nodes</dt><dd>2,839</dd></div>
+        <div class="stat"><dt>links</dt><dd>397</dd></div>
+        <div class="stat"><dt>layers</dt><dd>4</dd></div>
+        <div class="stat"><dt>node types</dt><dd>6</dd></div>
+      </dl>
+      <p class="shape-note">All of it in one file, 1.04 MB, sitting on disk. That is the entire graph you just flew.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════ THE CONTRACT ═══════════
+       The tunnel's own claim is "2,839 nodes · one JSON contract" and until now
+       the page never showed the contract. This is the node from the final beat,
+       verbatim out of pemberton.booboo.json, including the line the climax is
+       about. Do not paraphrase it or trim it for width: the whole value is that
+       a reader can diff it against /snapshot.json and find it identical. -->
+  <section class="contract">
+    <div class="contract-say">
+      <p class="kicker">the contract</p>
+      <h3>You just watched this node rewrite the house standard.</h3>
+      <p>Here it is, verbatim. One object in a JSON file, one of 2,839 in the graph you just fell through.</p>
+      <p class="contract-note">No database. No schema to migrate, nothing to keep running. An agent appends an object and the shape of the house changes.</p>
+      <a href="./snapshot.json">Read the whole file</a>
+    </div>
+    <pre class="contract-code" tabindex="0" role="group" aria-label="The room 407 incident node, as stored in the booboo file"><code>{
+  "id": "obs:incident-room-407-leak",
+  "type": "observation",
+  "layer": "ledger",
+  "label": "🔴 Water leak — Room 407",
+  "weight": 0.4,
+  "tier": 3,
+  "parent": "bucket:housekeeping",
+  "cluster": "housekeeping",
+  "data": {
+    "kind": "incident",
+    "severity": "major",
+    "flag": "critical",
+    "room": "407",
+    "loggedBy": "agent:housekeeping-room-attendant-07",
+    "escalatedTo": "agent:engineering",
+    "note": "Standing water at turndown, east wall saturated. Riser isolated; 405/409 OOS as precaution. <mark>House Standard § 14 amended next morning.</mark>",
+    "date": "2026-07-18T14:09:02.049Z"
+  }
+}</code></pre>
+  </section>
+
+  <!-- ═══════════ THE HANDOVER ═══════════
+       They just rode 15,600px on rails. The viewer is real and already deployed,
+       and until now the only route to it was a nav link reading "Traversal",
+       which means nothing to a stranger. -->
+  <section class="handover">
+    <div class="handover-say">
+      <p class="kicker">take the controls</p>
+      <h3>That run was on rails. Nothing steers this one but you.</h3>
+      <p>Same file, same 2,839 nodes. Drag to turn it, scroll to go deeper, click any node to read what it knows.</p>
+    </div>
+    <div class="handover-do">
+      <a class="cta" href="./viewer/?file=/pemberton.booboo.json">Open the live graph</a>
+      <p class="handover-note">Pointed at a hotel here. <code>npx create-booboo</code> aims it at whatever you already run.</p>
+    </div>
+  </section>
+
+  <div class="paper-cols">
       <div class="col">
         <p class="kicker">Quickstart</p>
         <p class="mono-dim">$ npx create-booboo</p>
@@ -168,7 +239,6 @@
         <p class="mono-dim">We map your stack into a living brain and keep it running.</p>
         <a href="mailto:hello@fractionalhq.uk">hello@fractionalhq.uk</a>
       </div>
-    </div>
   </div>
   <div class="paper-foot">
     <p class="mono-dim">Fractional HQ · open core · MIT</p>

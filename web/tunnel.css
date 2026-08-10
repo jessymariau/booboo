@@ -290,9 +290,17 @@ body {
 
 /* ── the paper ───────────────────────────────────────────────────────────── */
 
-/* min-height 100vh, not the approved build's flat 900px, so the tail the
-   drivers exclude (tailVh = 1) is exactly the footer at every window height.
-   At 900px tall they are the same page. */
+/* min-height 100vh so the paper is never shorter than the window. It used to be
+   EXACTLY 100vh with only two children and justify-content:space-between, which
+   is what left roughly 600px of empty cream in the middle: two items pushed to
+   the far ends of a full viewport. It now carries real content, so the children
+   stack from the top and only the baseline strip is pushed down.
+
+   ⚠️ THE DRIVER MEASURES THIS ELEMENT. tunnel.js ends the descent where the paper
+   begins, and it reads the paper's real height to do it, so this section is free
+   to be any height. It was NOT free before: the old code assumed the tail was
+   exactly one viewport (tailVh = 1) and growing this block would have kept the
+   depth counter climbing while you were already reading the footer. */
 .paper {
   position: relative;
   z-index: 2;
@@ -302,11 +310,162 @@ body {
   padding: 150px 96px 56px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 64px;
+  gap: 96px;
 }
+/* Keeps the baseline on the baseline when the content is shorter than the window. */
+.paper-foot { margin-top: auto; }
 
 .paper-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 80px; flex-wrap: wrap; }
+
+/* ── the shape of the file ───────────────────────────────────────────────── */
+.shape { display: flex; flex-direction: column; gap: 20px; }
+.shape dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, auto));
+  gap: 40px;
+}
+/* column-reverse so the number reads above its label while the DOM keeps the
+   dt-then-dd order a definition list requires. */
+.stat { display: flex; flex-direction: column-reverse; gap: 4px; }
+.stat dd {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--paper-ink);
+}
+.stat dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+.shape-note {
+  margin: 0;
+  max-width: 34ch;
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--paper-dim);
+}
+
+/* ── the honesty line ────────────────────────────────────────────────────── */
+.disclose {
+  max-width: 430px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(34, 28, 19, 0.16);
+  font-size: 15px !important;
+  color: var(--paper-dim);
+}
+
+/* ── the contract ────────────────────────────────────────────────────────── */
+
+/* minmax(0, 1fr) on the code column is load-bearing: a grid track defaults to
+   min-content, so a long unbroken string inside the <pre> would push the track
+   wider than the page and give the whole document a horizontal scrollbar. */
+.contract {
+  display: grid;
+  grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
+  gap: 72px;
+  align-items: start;
+}
+.contract-say { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+
+.contract h3,
+.handover h3 {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  color: var(--paper-ink);
+}
+.contract p,
+.handover p {
+  margin: 0;
+  max-width: 42ch;
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--paper-dim);
+}
+.contract-note { color: var(--paper-ink) !important; }
+
+.contract-code {
+  margin: 0;
+  padding: 26px 28px;
+  background: rgba(34, 28, 19, 0.045);
+  border: 1px solid rgba(34, 28, 19, 0.12);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--paper-ink);
+  /* pre-wrap, not a scroller: the note field is one long string and a reader
+     should not have to drag a code box sideways to finish the sentence that the
+     whole section is about. overflow-x stays as the belt to that braces. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: auto;
+  tab-size: 2;
+}
+.contract-code mark {
+  background: rgba(217, 160, 91, 0.34);
+  color: var(--paper-ink);
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+/* ── the handover ────────────────────────────────────────────────────────── */
+.handover {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 64px;
+  flex-wrap: wrap;
+  padding-top: 44px;
+  border-top: 1px solid rgba(34, 28, 19, 0.16);
+}
+.handover-say { display: flex; flex-direction: column; gap: 18px; }
+.handover h3 { max-width: 22ch; }
+.handover-do { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+
+.paper a.cta {
+  /* inline-flex, not inline: an inline anchor's box is driven by line-height, so
+     the padding paints but the hit target stays text-height. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 15px 28px;
+  background: var(--paper-ink);
+  color: var(--paper);
+  border-radius: 2px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 160ms cubic-bezier(.16, 1, .3, 1);
+}
+.paper a.cta:hover { background: var(--paper-link-hi); color: var(--paper); }
+.paper a.cta:focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 3px; }
+
+.handover-note { max-width: 34ch; font-size: 14px !important; }
+.handover-note code {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--paper-ink);
+  background: rgba(34, 28, 19, 0.07);
+  padding: 2px 5px;
+  border-radius: 2px;
+}
 
 .paper-mark { display: flex; flex-direction: column; gap: 22px; }
 .paper-mark h2 {
@@ -411,10 +570,25 @@ body {
   .nav-links { gap: 18px; }
   .nav-links a { font-size: 11px; }
 
-  .paper { min-height: 0; padding: 88px 22px 40px; gap: 56px; }
+  .paper { min-height: 0; padding: 88px 22px 40px; gap: 64px; }
   .paper-top { gap: 56px; }
   .paper-cols { gap: 40px; }
   .paper-mark h2 { font-size: 40px; }
+
+  /* One column, and the code shrinks with it. 11.5px is the smallest the mono
+     stays comfortable at; the box is allowed to scroll here because a phone
+     cannot wrap a 40-character node id without looking broken. */
+  /* Two-up, not four: four stats across a 390px screen leaves each number in a
+     40px column and the labels wrap mid-word. */
+  .shape dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 32px; }
+  .stat dd { font-size: 26px; }
+
+  .contract { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .contract h3, .handover h3 { font-size: 26px; max-width: 18ch; }
+  .contract-code { padding: 20px 18px; font-size: 11.5px; line-height: 1.7; }
+
+  .handover { flex-direction: column; align-items: flex-start; gap: 28px; padding-top: 36px; }
+  .paper a.cta { padding: 14px 22px; }
 }
 
 /* Very narrow: the nav's four links stop fitting beside the wordmark. */
