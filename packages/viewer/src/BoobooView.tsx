@@ -386,7 +386,11 @@ export function BoobooView({
 
       {/* HUD — top-left. On narrow it drops BELOW the preset bar, which is
           centred and eats the full width there; before this they were both at
-          top:18 and the house's own name rendered behind the buttons. */}
+          top:18 and the house's own name rendered behind the buttons.
+          Gated with the rest of the chrome: an embed host puts its own title on
+          the page, and the tunnel already prints these exact counts in its
+          "the file" block, so this was the same fact twice in two typefaces. */}
+      {controls && (
       <div style={{ position: "absolute", top: narrow ? 62 : 18, left: narrow ? 12 : 20, zIndex: 10, pointerEvents: "none" }}>
         <div style={{ color: T.gold, fontSize: 13, letterSpacing: 2.5, fontWeight: 700, fontFamily: T.mono }}>🐾 {data.meta.title ?? "BOOBOO"}</div>
         <div style={{ color: T.faint, fontSize: 10.5, letterSpacing: 0.6, marginTop: 3 }}>
@@ -408,6 +412,7 @@ export function BoobooView({
           </div>
         )}
       </div>
+      )}
 
       {controls && (
         <PresetBar
@@ -429,22 +434,38 @@ export function BoobooView({
         />
       )}
 
-      {node && <Dossier key={node.id} n={node} byId={byId} rels={adj.get(node.id) ?? []} reports={reportsByAgent.get(node.id) ?? []} accent={layerColor[node.layer] ?? T.gold} onClose={() => setSel(null)} onJump={setSel} />}
+      {/* ── EMBEDDED MODE (controls=false, i.e. ?chrome=lite) SHOWS NO CHROME ──
+          controls=false is not "hide the sliders", it is "you are scenery inside
+          somebody else's page". A host embed still speaks the full postMessage
+          protocol (booboo:cfg / booboo:sel / booboo:focus / booboo:ready) — only
+          chrome=0 drops that, and it renders a different component entirely.
+
+          WHY THIS CHANGED, 2026-08-10: the Booboo tunnel embeds this with
+          pointer-events:none, so every affordance below was a lie. On desktop
+          nobody noticed because the host crops 440px off the right and the panels
+          fall out of frame; at phone widths the crop is gone and the graph sat
+          there inviting "drag to turn · pinch to zoom · tap a node" while
+          ignoring every touch. Suppressing beats re-enabling pointer events: a
+          58vh interactive WebGL canvas mid-page is a scroll trap on touch, which
+          is exactly why the host disables it. */}
+      {controls && node && <Dossier key={node.id} n={node} byId={byId} rels={adj.get(node.id) ?? []} reports={reportsByAgent.get(node.id) ?? []} accent={layerColor[node.layer] ?? T.gold} onClose={() => setSel(null)} onJump={setSel} />}
 
       {palette && <Palette data={data} layerColor={layerColor} onJump={(id) => { setSel(id); setPalette(false); }} onClose={() => setPalette(false)} />}
 
-      {!sel && <Orient data={data} flags={flags} narrow={narrow} touch={touch} onJump={setSel} onAsk={() => setPalette(true)} />}
+      {controls && !sel && <Orient data={data} flags={flags} narrow={narrow} touch={touch} onJump={setSel} onAsk={() => setPalette(true)} />}
 
       {/* The hint sat bottom-centre at 10px and ran straight under the
           "pro controls" button on a phone — and told a touch visitor to
           scroll to zoom and press a key they do not have. */}
-      <div style={{ position: "absolute", bottom: narrow ? 10 : 12, left: "50%", transform: "translateX(-50%)", width: narrow ? "100%" : "auto", textAlign: "center", fontSize: 10, color: T.faint, pointerEvents: "none", letterSpacing: 0.4 }}>
-        {touch ? (
-          <>drag to turn · pinch to zoom · tap a node</>
-        ) : (
-          <>drag to rotate · scroll to zoom · click a node · <span style={{ color: T.dim }}>press / to find</span></>
-        )}
-      </div>
+      {controls && (
+        <div style={{ position: "absolute", bottom: narrow ? 10 : 12, left: "50%", transform: "translateX(-50%)", width: narrow ? "100%" : "auto", textAlign: "center", fontSize: 10, color: T.faint, pointerEvents: "none", letterSpacing: 0.4 }}>
+          {touch ? (
+            <>drag to turn · pinch to zoom · tap a node</>
+          ) : (
+            <>drag to rotate · scroll to zoom · click a node · <span style={{ color: T.dim }}>press / to find</span></>
+          )}
+        </div>
+      )}
     </div>
   );
 }

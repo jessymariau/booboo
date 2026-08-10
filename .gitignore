@@ -27,3 +27,9 @@ web/dist/
 
 # Vercel CLI link (per-machine, never committed)
 .vercel
+
+# Scratch probes. An underscore prefix means throwaway: written to answer one
+# question, never imported, never deployed. Named here so `git status` can stay
+# empty, which is what scripts/deploy.mjs requires before it will ship.
+scripts/_*.mjs
+packages/*/_*.mjs

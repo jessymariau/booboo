@@ -200,5 +200,23 @@ if (existsSync(linkSrc)) {
   await cp(linkSrc, path.join(out, ".vercel", "project.json"));
 }
 
+// PRODUCTION SAYS WHICH COMMIT IT IS. This project has no git connection, so
+// nothing reconciles the deployed site against the repo and the two can drift
+// apart in silence. A commit stamp on the artefact makes that drift DETECTABLE
+// by anyone, forever, with one request:
+//   curl -s https://booboo.fractionalhq.uk/version.json
+//   git rev-parse origin/main          # these two must match
+// Guarded: git may be absent, and `dirty` is recorded rather than hidden so a
+// hand-deployed working tree is visible in production instead of implied.
+let stamp = { commit: null, dirty: null, built: new Date().toISOString() };
+try {
+  const { execSync } = await import("node:child_process");
+  const git = (c) => execSync(c, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  stamp.commit = git("git rev-parse HEAD");
+  stamp.dirty = git("git status --porcelain").length > 0;
+} catch { /* no git here — leave the fields null rather than invent them */ }
+await writeFile(path.join(out, "version.json"), JSON.stringify(stamp, null, 2) + "\n");
+
 const listed = await readdir(out);
 console.log(`✓ web/dist ready → ${listed.join(", ")}`);
+console.log(`  commit ${stamp.commit?.slice(0, 7) ?? "unknown"}${stamp.dirty ? " (DIRTY TREE)" : ""}`);
