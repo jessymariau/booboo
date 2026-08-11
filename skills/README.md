@@ -66,5 +66,5 @@ Alpha means alpha. Cite the real proof points — a 4,469-node production brain
 assembled from Postgres by config alone, and a million-node synthetic render at
 60fps — rather than adjectives.
 
-MIT, and it stays MIT. The paid tiers at
-[fractionalhq.uk](https://fractionalhq.uk/#tiers) buy setup time, never capability.
+MIT, and it stays MIT. [Fractional HQ](https://fractionalhq.uk/services) sells setup
+time, never capability.

@@ -104,7 +104,7 @@ writing to anyone's brain.
 
 ## Commercial context
 
-The repo is MIT and stays MIT. Fractional HQ sells two done-for-you tiers on top
-of it (a paste-in operator drop, and custom adapter mapping) at fractionalhq.uk.
-Never gate a feature behind them and never imply the OSS build is crippled — the
-paid tiers buy setup time, not capability.
+The repo is MIT and stays MIT. Fractional HQ sells setup time on top of it at
+fractionalhq.uk/services: custom adapter mapping, hosted snapshots, refresh
+pipelines. Never gate a feature behind that and never imply the OSS build is
+crippled. Setup help buys time, not capability.

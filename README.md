@@ -168,12 +168,9 @@ None fuse **wiring + knowledge + episodic memory + agents + crons** into one roo
 
 ## Key in hand (optional — everything above stays free)
 
-Every feature is MIT and always will be. If you'd rather not do the setup yourself:
-
-- **[The Booboo Drop — £29](https://fractionalhq.uk/#tiers)** · key in hand: a folder + operator prompt you paste into Claude Code or Cursor — your agent deploys your brain end-to-end while you answer five questions.
-- **[Done-for-you](https://fractionalhq.uk/#tiers)** · we map *your* stack — custom adapters, hosted snapshot, refresh pipeline.
-
-Both are built on this repo, same config schema — never a fork, never a gate.
+Every feature is MIT and always will be. If you'd rather not do the setup yourself,
+[Fractional HQ](https://fractionalhq.uk/services) maps *your* stack: custom adapters,
+hosted snapshot, refresh pipeline. Same repo, same config schema, never a fork, never a gate.
 
 ## License
 
