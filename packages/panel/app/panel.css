@@ -28,34 +28,108 @@
      The ground is a WARM white, never flat #fff — a lit room, not a sheet of
      paper. Depth comes from layered shadow, so ink stays the only dark thing
      on screen and brass drops from material to ~5% accent. */
-  --bg: #fcfbf9;
-  --bg-1: #fffefb;      /* tinted toward the brass hue, never flat #fff */
-  --bg-2: #f6f4f0;
-  --line: #e9e5df;
-  --line-soft: #f0ece6;
-  --line-2: #d9d3c9;
-  --surface-tray: rgba(255, 255, 255, .5);
+
+  /* ══ TYPE: ONE GEOMETRIC SCALE, RATIO 1.25 ═══════════════════════════════
+     The board used to carry eighteen distinct sizes between 8.5px and 30px,
+     six of them inside a 2.5px band. A section head and a body line one or two
+     pixels apart is not a hierarchy, it is noise, and it is the single loudest
+     reason a dense board reads cheap. Every step below is exactly 1.25x the one
+     under it, written as a calc chain so the ratio is provable in the source
+     rather than asserted in a comment.
+     t-1 is the mono micro rail and is deliberately the ONLY small size: five
+     separate label sizes (8.5 / 9 / 9.5 / 10 / 10.5) collapse into it. */
+  --scale: 1.25;
+  --t-1: 9.6px;                            /* mono micro: eyebrows, rails, badges */
+  --t-2: calc(var(--t-1) * var(--scale));  /* 12.00  caption, meta, controls */
+  --t-3: calc(var(--t-2) * var(--scale));  /* 15.00  body, staff plate name */
+  --t-4: calc(var(--t-3) * var(--scale));  /* 18.75  department plate, dossier title */
+  --t-5: calc(var(--t-4) * var(--scale));  /* 23.44  screen title, stat number */
+  --t-6: calc(var(--t-5) * var(--scale));  /* 29.30  brand mark, hero number */
+
+  /* WEIGHT: only the weights the page actually loads.
+     app/index.html requests DM Sans 300/400/500, Fraunces 400/600 and JetBrains
+     Mono 400/500. Measured on the live board: DM Sans at 600, 650, 700 and 750
+     all render at exactly the 500 advance width, so sixteen of the twenty-one
+     font-weight declarations in this file were buying nothing at all. Emphasis
+     therefore comes from the DISPLAY FACE, from size and from ink, which are
+     real, and never from a weight that does not exist. */
+  --w-quiet: 300;
+  --w-body: 400;
+  --w-strong: 500;
+  --w-display: 600;
+  --track: 0.14em;                         /* one tracking value for all micro caps */
+
+  /* ══ RADII: THREE, PLUS 50% FOR TRUE CIRCLES ═════════════════════════════
+     Eleven values (3 / 5 / 7 / 8 / 9 / 10 / 11 / 12 / 14 / 15 / 18 and two
+     pill widths) collapse to a deliberate three. Chips are small, cards are
+     medium, containers are large; nothing else is allowed a corner. */
+  --r-sm: 6px;                             /* chips, inputs, tiles, badges, buttons */
+  --r-md: 12px;                            /* cards: plates, rows, dossier blocks */
+  --r-lg: 20px;                            /* containers: lanes, packs, shelf, sheet */
+
+  /* ══ SPACING: A 4px GRID, USED FOR RHYTHM ════════════════════════════════
+     design/tokens.json already declares grid 4; the stylesheet had drifted to
+     twenty-four distinct padding values. Rhythm is the point of the scale:
+     sp-1 binds a label to the thing it labels, sp-2 separates siblings, sp-4
+     separates a card's regions, sp-5 separates whole groups. Equal padding
+     everywhere is what made nine departments read as one grey field. */
+  --sp-0: 2px;                             /* inline code, hairline chips only */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* ══ SURFACES: ONE RAMP, FOUR RUNGS, NAMED BY ROLE ═══════════════════════
+     ground is the floor, raised is anything laid on it or inset into a card
+     (lane trays, chips, inputs, machine racks), card is the thing you read,
+     overlay is chrome that floats over the board. A chip and a card were two
+     unrelated whites before; they are now two named rungs of one ramp.
+     LIGHT IS THE DEFAULT (Jesse, 2026-07-19: "design for everyone"). The
+     ground drops to a real warm paper so a card can actually lift off it: the
+     old ground and card sat 1.02:1 apart, which is why the whole board read as
+     one flat sheet. */
+  --s-ground: #eee9de;
+  --s-raised: #f7f3ea;
+  --s-card: #fffdf7;
+  --s-overlay: #ffffff;
+
+  --line: #e0d9c9;
+  --line-soft: #ebe4d6;
+  --line-2: #cdc3ad;
   /* the ground-plane dot. White-on-white rendered NOTHING on the light board
      — the texture was there in the stylesheet and absent on screen. */
   --dot: rgba(27, 24, 21, 0.055);
-  --surface-lift: linear-gradient(180deg, #fffdf8, #ffffff);
-  --surface-lift-edge: #e8d9bd;
-  --ink: #1b1815;
-  --ink-2: #6b6459;
-  --ink-3: #9a9287;
-  --accent: #a9753a;
-  --accent-2: #c9954f;
-  --accent-dim: #f7f0e4;
-  --warn: #b8862c;
-  --warn-wash: #fbf3e3;
-  --ok: #3f9c6d;
-  --ok-wash: #eaf5ef;
-  --fail: #c0553f;
-  --fail-wash: #fbeeea;
+  /* the GM plate is the one lit plate on the rack, so it keeps a gradient.
+     It is drawn FROM the ramp rather than from two loose hexes. */
+  --surface-lift: linear-gradient(180deg, var(--s-overlay), var(--s-card));
+  --surface-lift-edge: #ddcda8;
+
+  /* INK. Every value below clears WCAG AA (4.5:1) against every rung of the
+     ramp above, verified numerically before it was typed. The old ink-3 read
+     3.02:1 on a card and carried most of the board's small print, which is
+     twenty-eight failures on one screen. */
+  --ink: #1b1815;                          /* 14.6:1 worst case */
+  --ink-2: #524b40;                        /* 7.11:1 worst case */
+  --ink-3: #6f6759;                        /* 4.61:1 worst case */
+  /* one chromatic voice, brass, dark enough to be read rather than admired.
+     accent-2 is always the HIGHER contrast of the pair against its own ground,
+     in both themes, so "2" consistently means "louder". */
+  --accent: #89602e;                       /* 4.59:1 worst case */
+  --accent-2: #7d5628;                     /* 5.36:1 worst case */
+  --accent-dim: #f3ead8;
+  --warn: #835e1e;                         /* 4.84:1 */
+  --warn-wash: #f8efdb;
+  --ok: #2a6f4d;                           /* 4.99:1 */
+  --ok-wash: #e6f1ea;
+  --fail: #a8452f;                         /* 4.88:1 */
+  --fail-wash: #f8e8e3;
   /* one shadow set, three depths — the only source of elevation */
   --sh-1: 0 1px 2px rgba(27, 24, 21, .04), 0 1px 1px rgba(27, 24, 21, .03);
-  --sh-2: 0 2px 4px rgba(27, 24, 21, .04), 0 6px 16px -6px rgba(27, 24, 21, .10);
-  --sh-3: 0 4px 8px rgba(27, 24, 21, .05), 0 16px 34px -12px rgba(27, 24, 21, .16);
+  --sh-2: 0 2px 4px rgba(27, 24, 21, .05), 0 6px 16px -6px rgba(27, 24, 21, .12);
+  --sh-3: 0 4px 8px rgba(27, 24, 21, .06), 0 16px 34px -12px rgba(27, 24, 21, .18);
   /* motion — slight, never showy. Everything eases on these two. */
   --ease: cubic-bezier(.2, .7, .25, 1);
   --settle: cubic-bezier(.16, 1, .3, 1);
@@ -70,27 +144,31 @@
    Scoped to the panel's own root (not :root) for two reasons: the panel must
    not read a HOST's data-theme as its own, and it must not write one either. */
 .pnl[data-theme="dark"], .pnl-fatal[data-theme="dark"] {
-  --bg: var(--wine);
-  --bg-1: var(--plate);
-  --bg-2: var(--wine2);
+  /* the SAME four rungs, inverted: elevation reads lighter in both themes, so
+     every rule written against the ramp holds without a dark-theme override. */
+  --s-ground: var(--wine);
+  --s-raised: var(--wine2);
+  --s-card: var(--plate);
+  --s-overlay: var(--plate-lift);
   --line: rgba(244, 238, 226, 0.13);
   --line-soft: rgba(244, 238, 226, 0.08);
   --line-2: rgba(244, 238, 226, 0.22);
-  --surface-tray: rgba(11, 5, 9, .4);
   --dot: rgba(255, 255, 255, 0.035);
   --surface-lift: linear-gradient(168deg, #3a2a16, #1d1410);
   --surface-lift-edge: rgba(239, 195, 137, .4);
-  --ink: var(--cream);
-  --ink-2: var(--cream-dim);
-  --ink-3: var(--cream-faint);
-  --accent: var(--brass);
-  --accent-2: var(--brass-hi);
+  --ink: var(--cream);                     /* 14.96:1 worst case */
+  --ink-2: var(--cream-dim);               /* 7.38:1 */
+  /* NOT --cream-faint: it measures 3.70:1 on the plate-lift rung and carried
+     ten of the dark theme's own failures. This is the same hue, two steps up. */
+  --ink-3: #988e7d;                        /* 5.35:1 worst case */
+  --accent: var(--brass);                  /* 7.51:1 */
+  --accent-2: var(--brass-hi);             /* 10.56:1 */
   --accent-dim: rgba(217, 160, 91, 0.12);
   --warn: var(--brass);
   --warn-wash: rgba(217, 160, 91, 0.10);
-  --ok: var(--mint);
+  --ok: var(--mint);                       /* 11.83:1 */
   --ok-wash: rgba(139, 233, 176, 0.10);
-  --fail: #e07b6a;
+  --fail: #e07b6a;                         /* 5.93:1 */
   --fail-wash: rgba(224, 123, 106, 0.10);
   --sh-1: 0 1px 2px rgba(0, 0, 0, .5);
   --sh-2: 0 2px 4px rgba(0, 0, 0, .5), 0 16px 34px -18px rgba(0, 0, 0, .85);
@@ -101,14 +179,16 @@
    turned the cockpit's body white while the cards stayed dark, which is half of
    what "split-brain" looked like. The standalone app paints its own body in
    app/index.html, which is the page that actually owns it. */
-.pnl[data-theme="dark"] .ag { background: linear-gradient(168deg, var(--plate-lift), #180e16); }
-.pnl[data-theme="dark"] .bar, .pnl[data-theme="dark"] .tabs { background: rgba(11, 5, 9, 0.72); }
+/* The per-theme .ag gradient and the translucent bar/tab washes that used to
+   sit here are GONE. Both were surfaces invented outside the ramp: the card
+   already IS the card rung, the bar already IS the overlay rung, and painting
+   them again per theme is how eleven surfaces accumulate out of four. */
 .pnl[data-theme="dark"] .rack .wt { background: #fff; border-color: transparent; }
 .pnl[data-theme="dark"] .pnl-stars { opacity: .45; }
 
 .pnl, .pnl-fatal, .pnl *, .pnl-fatal * { box-sizing: border-box; }
 
-.pnl, .pnl-fatal { font-family: var(--font); color: var(--ink); background: var(--bg); }
+.pnl, .pnl-fatal { font-family: var(--font); color: var(--ink); background: var(--s-ground); }
 .pnl { display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
 /* the ground — warm wine light pooling from the top-left, exactly as the hero
@@ -135,163 +215,205 @@
 /* the fit is a TRANSITION not an animation — suppress it explicitly so the org
    snaps to its fitted size instantly under reduced-motion (honest for captures) */
 @media (prefers-reduced-motion: reduce) { .chart { transition: none !important; } }
+/* the backstop: anything added later that nobody remembered to list above
+   still lands at its final state instead of moving. A named list is a promise
+   somebody has to keep; this one keeps itself. */
+@media (prefers-reduced-motion: reduce) {
+  .pnl *, .pnl-fatal *, .pnl *::before, .pnl *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* ONE FOCUS RING FOR THE WHOLE BOARD. Four controls shipped with no visible
+   focus at all, among them the zoomer buttons (all:unset wipes the outline)
+   and the tabs (border:none, no focus rule). A per-component focus style is a
+   list somebody forgets; this cannot be forgotten, and the outline follows
+   each control's own radius for free. */
+.pnl :focus-visible, .pnl-fatal :focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
 
 /* top bar */
 .bar {
-  position: relative; z-index: 2; display: flex; align-items: center; gap: 22px;
-  padding: 14px 26px; border-bottom: 1px solid var(--line-soft);
-  background: rgba(252, 251, 249, 0.82); backdrop-filter: blur(10px);
+  position: relative; z-index: 2; display: flex; align-items: center;
+  gap: var(--sp-2) var(--sp-5);
+  padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--line);
+  background: var(--s-overlay);
   flex-wrap: wrap;
 }
-.bar-brand { font-size: 19px; font-family: var(--display); font-weight: 600; letter-spacing: -0.01em; }
-.bar-brand b { font-weight: 600; color: var(--accent-2); }
-.bar-stats { display: flex; gap: 18px; color: var(--ink-2); font-size: 12.5px; }
-.bar-stats b { color: var(--ink); font-variant-numeric: tabular-nums; font-size: 14px; }
+.bar-brand { font-size: var(--t-5); font-family: var(--display); font-weight: var(--w-display); letter-spacing: -0.015em; line-height: 1.1; }
+.bar-brand b { font-weight: var(--w-display); color: var(--accent-2); }
+/* the stats read as label-and-number pairs, so the pair is bound tight (sp-1)
+   and the pairs are separated wide (sp-4) */
+.bar-stats { display: flex; gap: var(--sp-4); color: var(--ink-3); font-size: var(--t-2); align-items: baseline; }
+.bar-stats b { color: var(--ink); font-variant-numeric: tabular-nums; font-size: var(--t-3); font-weight: var(--w-strong); margin-right: var(--sp-1); }
 .bar-stats .tap { cursor: pointer; transition: color 0.15s; }
 .bar-stats .tap:hover { color: var(--accent); }
 .bar-stats .tap:hover b { color: var(--accent); }
-.bar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.bar-ok { color: var(--accent); font-size: 12px; }
-.bar-draft { color: var(--warn); font-size: 12px; animation: pulse 1.6s ease-in-out infinite; }
+.bar-actions { margin-left: auto; display: flex; align-items: center; gap: var(--sp-2); }
+.bar-ok { color: var(--accent); font-size: var(--t-2); }
+.bar-draft { color: var(--warn); font-size: var(--t-2); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .btn {
-  border: 1px solid var(--line); background: var(--bg-2); color: var(--ink);
-  border-radius: 9px; padding: 8px 15px; font-size: 12.5px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--s-raised); color: var(--ink);
+  border-radius: var(--r-sm); padding: var(--sp-2) var(--sp-3); font-size: var(--t-2); cursor: pointer;
   transition: border-color .18s var(--ease), transform .12s var(--ease), box-shadow .2s var(--ease);
 }
 .btn:hover { border-color: var(--accent); }
 .btn:active { transform: scale(0.97); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 650; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--s-overlay); font-weight: var(--w-strong); }
 .btn.primary:disabled { opacity: 0.5; cursor: wait; }
 .btn.ghost { background: transparent; color: var(--ink-2); }
 
 /* tabs */
 .tabs {
-  position: relative; z-index: 2; display: flex; gap: 4px; padding: 0 22px;
-  border-bottom: 1px solid var(--line); background: rgba(252, 251, 249, 0.7); backdrop-filter: blur(8px);
+  position: relative; z-index: 2; display: flex; gap: var(--sp-1); padding: 0 var(--sp-5);
+  border-bottom: 1px solid var(--line); background: var(--s-overlay);
   overflow-x: auto;
 }
 .tab {
   background: none; border: none; border-bottom: 2px solid transparent; color: var(--ink-2);
-  transition: color .18s var(--ease), border-color .22s var(--ease);
-  font-size: 12.5px; padding: 12px 15px 11px; cursor: pointer; white-space: nowrap;
+  font-size: var(--t-2); padding: var(--sp-3); cursor: pointer; white-space: nowrap;
   transition: color 0.15s, border-color 0.2s;
 }
 .tab:hover { color: var(--ink); }
-.tab.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-.tab-glyph { margin-right: 5px; opacity: 0.85; }
+.tab.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: var(--w-strong); }
+.tab-glyph { margin-right: var(--sp-1); opacity: 0.85; }
 
 /* every tab's content rises in — the key on .content retriggers it */
 .content { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; min-height: 0; animation: rise 0.28s ease both; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-.screen { flex: 1; overflow-y: auto; padding: 30px 34px 60px; max-width: 900px; }
-.scr-title { display: flex; align-items: center; gap: 10px; font-size: 20px; margin: 0 0 6px; }
-.scr-count { font-size: 12px; background: var(--accent-dim); color: var(--accent); border-radius: 99px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
-.scr-sub { color: var(--ink-2); font-size: 12.5px; margin: 0 0 24px; }
-.scr-empty { color: var(--ink-3); font-size: 13px; line-height: 1.6; }
-.scr-empty code, .scr-sub code { font-family: var(--mono); background: var(--bg-2); padding: 1px 6px; border-radius: 5px; font-size: 11.5px; }
-.pnl-back { background: none; border: 1px solid var(--line); color: var(--ink-2); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; margin-bottom: 16px; }
+.screen { flex: 1; overflow-y: auto; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 900px; }
+/* a screen head is a TITLE then a subtitle then the content. Title to subtitle
+   is sp-1 because they are one thought; subtitle to content is sp-5 because
+   they are not. */
+.scr-title { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--t-5); font-family: var(--display); font-weight: var(--w-display); line-height: 1.15; margin: 0 0 var(--sp-1); }
+.scr-count { font-size: var(--t-2); background: var(--accent-dim); color: var(--accent); border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-2); font-variant-numeric: tabular-nums; font-weight: var(--w-strong); }
+.scr-sub { color: var(--ink-2); font-size: var(--t-2); margin: 0 0 var(--sp-5); }
+.scr-empty { color: var(--ink-3); font-size: var(--t-2); line-height: 1.65; }
+.scr-empty code, .scr-sub code { font-family: var(--mono); background: var(--s-raised); padding: var(--sp-0) var(--sp-1); border-radius: var(--r-sm); font-size: var(--t-1); }
+.pnl-back { background: none; border: 1px solid var(--line); color: var(--ink-2); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-3); font-size: var(--t-2); cursor: pointer; margin-bottom: var(--sp-4); }
 .pnl-back:hover { border-color: var(--accent); color: var(--accent); }
 
 /* buckets */
-.bk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 13px; }
+.bk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--sp-3); }
+/* THE COLOUR DECLARATION BELOW IS LOAD-BEARING, DO NOT DROP IT. A <button> does
+   not inherit colour from its theme: it takes the user-agent buttontext, which is
+   BLACK. Without this line every bucket count rendered black on the plum card in
+   dark mode, measured at 1.14:1 against a 4.5 floor, so 286 / 265 / 258 were
+   ghosts and the whole tab was unusable the moment anyone hit the theme toggle.
+   Light mode hid it completely: black on warm paper is 20.6:1, so the bug only
+   existed in the theme nobody screenshotted. It survived a full token pass whose
+   own audit probe reported zero dark failures, because that probe only sampled
+   elements over 400px squared. Same bug class lives on any <button> in this file
+   with no colour of its own: grep before adding another. */
 .bk-card {
-  text-align: left; background: var(--bg-1); border: 1px solid var(--line); border-radius: 15px;
-  padding: 17px 18px; cursor: pointer; transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
+  color: var(--ink);
+  text-align: left; background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: var(--sp-4); cursor: pointer; transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
   animation: settle 0.4s ease both;
 }
 .bk-card:hover { border-color: hsl(var(--h) 45% 55% / 0.6); transform: translateY(-2px); box-shadow: 0 8px 26px hsl(var(--h) 50% 50% / 0.10); }
-.bk-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.bk-top { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .bk-dot { width: 9px; height: 9px; border-radius: 50%; background: hsl(var(--h) 55% 60%); box-shadow: 0 0 9px hsl(var(--h) 55% 60% / 0.7); display: inline-block; }
-.bk-name { font-size: 14px; font-weight: 650; }
-.bk-n { font-size: 27px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1; }
+.bk-name { font-size: var(--t-3); font-weight: var(--w-strong); }
+/* the number is the point of the card, so it gets the top of the scale and the
+   label under it gets the bottom. A 2.4x jump, not the old 1.9x. */
+.bk-n { font-size: var(--t-6); font-weight: var(--w-strong); font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em; }
 .bk-n.dim { color: var(--ink-3); }
-.bk-l { font-size: 9.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
-.bk-crew { display: flex; gap: 4px; margin-top: 13px; flex-wrap: wrap; }
+.bk-l { font-size: var(--t-1); color: var(--ink-3); text-transform: uppercase; letter-spacing: var(--track); margin-top: var(--sp-1); font-family: var(--mono); }
+.bk-crew { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); flex-wrap: wrap; }
 .bk-face {
-  width: 24px; height: 24px; display: grid; place-items: center; font-size: 12px;
-  border-radius: 7px; background: var(--bg-2); border: 1px solid var(--line);
+  width: 24px; height: 24px; display: grid; place-items: center; font-size: var(--t-2);
+  border-radius: var(--r-sm); background: var(--s-raised); border: 1px solid var(--line);
 }
-.bk-more { font-size: 10px; color: var(--ink-3); align-self: center; }
-.bk-agents { margin-top: 8px; font-size: 10.5px; color: var(--ink-3); line-height: 1.5; }
+.bk-more { font-size: var(--t-1); color: var(--ink-3); align-self: center; }
+.bk-agents { margin-top: var(--sp-2); font-size: var(--t-2); color: var(--ink-3); line-height: 1.5; }
 
-.mem-list { display: flex; flex-direction: column; gap: 6px; }
+.mem-list { display: flex; flex-direction: column; gap: var(--sp-1); }
 .mem-row {
-  display: flex; align-items: baseline; gap: 13px; background: var(--bg-1);
-  border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; animation: settle 0.35s ease both;
+  display: flex; align-items: baseline; gap: var(--sp-3); background: var(--s-card);
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); animation: settle 0.35s ease both;
 }
-.mem-when { font-size: 10.5px; color: var(--accent-2); white-space: nowrap; min-width: 68px; font-variant-numeric: tabular-nums; }
-.mem-label { font-size: 13px; }
+.mem-when { font-size: var(--t-1); font-family: var(--mono); color: var(--accent); white-space: nowrap; min-width: 68px; font-variant-numeric: tabular-nums; }
+.mem-label { font-size: var(--t-3); }
 
 /* reports timeline */
-.rep-filter { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 20px; }
+.rep-filter { display: flex; gap: var(--sp-1); flex-wrap: wrap; margin-bottom: var(--sp-5); }
 .chip.tap { cursor: pointer; transition: transform 0.1s, background 0.15s; }
 .chip.tap:hover { transform: translateY(-1px); }
-.timeline { position: relative; padding-left: 22px; }
+.timeline { position: relative; padding-left: var(--sp-5); }
 .timeline::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
-.tl-row { position: relative; margin-bottom: 15px; animation: settle 0.35s ease both; }
+.tl-row { position: relative; margin-bottom: var(--sp-3); animation: settle 0.35s ease both; }
 .tl-dot {
   position: absolute; left: -21px; top: 12px; width: 9px; height: 9px; border-radius: 50%;
   background: hsl(var(--h) 55% 60%); box-shadow: 0 0 9px hsl(var(--h) 55% 60% / 0.7);
 }
-.tl-body { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 11px 15px; transition: border-color 0.15s, transform 0.12s; }
+.tl-body { background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-3); transition: border-color 0.15s, transform 0.12s; }
 .tl-row:hover .tl-body { border-color: hsl(var(--h) 45% 50% / 0.5); transform: translateX(2px); }
-.tl-top { display: flex; align-items: center; gap: 8px; }
+.tl-top { display: flex; align-items: center; gap: var(--sp-2); }
+/* the avatar tile is the SAME object as .bk-face and now shares its surface.
+   It used to be hsl(h 42% 22%), a near-black tile invented per bucket, which
+   on the light board was the only dark chip on screen. The hue cue it was
+   carrying is already on .tl-dot, six pixels to its left. */
 .tl-ava {
-  width: 24px; height: 24px; flex: 0 0 24px; display: grid; place-items: center; font-size: 12px;
-  border-radius: 7px; background: hsl(var(--h) 42% 22% / 0.8); border: 1px solid hsl(var(--h) 45% 45% / 0.3);
+  width: 24px; height: 24px; flex: 0 0 24px; display: grid; place-items: center; font-size: var(--t-2);
+  border-radius: var(--r-sm); background: var(--s-raised); border: 1px solid var(--line);
 }
-.tl-agent { font-size: 12.5px; font-weight: 650; }
-.tl-when { font-size: 10.5px; color: var(--ink-3); margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tl-label { font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tl-sum { margin: 7px 0 0 32px; font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+.tl-agent { font-size: var(--t-3); font-weight: var(--w-strong); }
+.tl-when { font-size: var(--t-1); font-family: var(--mono); color: var(--ink-3); margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tl-label { font-size: var(--t-2); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-sum { margin: var(--sp-1) 0 0 32px; font-size: var(--t-2); line-height: 1.65; color: var(--ink-2); }
 
 /* rules */
-.rule-list { display: flex; flex-direction: column; gap: 9px; }
-.rule-card { background: var(--bg-1); border: 1px solid var(--line); border-radius: 11px; padding: 12px 15px 10px; animation: settle 0.35s ease both; transition: border-color 0.15s; }
+.rule-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+.rule-card { background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-3); animation: settle 0.35s ease both; transition: border-color 0.15s; }
 .rule-card:hover { border-color: var(--accent); }
-.rule-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
-.rule-ref { font-family: var(--mono); font-size: 12.5px; }
-.rule-scope { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); background: var(--accent-dim); border-radius: 5px; padding: 2px 7px; }
-.rule-meta { font-size: 11.5px; color: var(--ink-3); line-height: 1.6; }
-.rule-meta b { color: var(--ink-2); font-weight: 600; }
-.rule-bar { margin-top: 9px; height: 3px; border-radius: 99px; background: var(--bg-2); overflow: hidden; }
-.rule-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.6s ease; }
+.rule-top { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+.rule-ref { font-family: var(--mono); font-size: var(--t-3); font-weight: var(--w-strong); }
+.rule-scope { font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track); color: var(--accent); background: var(--accent-dim); border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-1); font-family: var(--mono); }
+.rule-meta { font-size: var(--t-2); color: var(--ink-3); line-height: 1.6; }
+.rule-meta b { color: var(--ink-2); font-weight: var(--w-strong); }
+.rule-bar { margin-top: var(--sp-2); height: 3px; border-radius: var(--r-sm); background: var(--s-raised); overflow: hidden; }
+.rule-bar i { display: block; height: 100%; border-radius: var(--r-sm); background: var(--accent); transition: width 0.6s ease; }
 
 /* graph */
 .graph-wrap { flex: 1; min-height: 0; display: flex; }
 .graph-frame { flex: 1; border: none; background: #06080e; }
 
 /* dossier extras */
-.doss-head-actions { margin-left: auto; display: flex; gap: 6px; }
-.doss-3d { background: var(--accent-dim); border: 1px solid rgba(79, 184, 160, 0.35); color: var(--accent); border-radius: 8px; padding: 6px 10px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+.doss-head-actions { margin-left: auto; display: flex; gap: var(--sp-1); }
+/* the border was a leftover verdigris rgba from a palette this board has not
+   used since the wine-and-brass port. One accent, taken from the ramp. */
+.doss-3d { background: var(--accent-dim); border: 1px solid var(--line-2); color: var(--accent); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2); font-size: var(--t-2); cursor: pointer; white-space: nowrap; }
 .doss-3d:hover { border-color: var(--accent); }
 
 /* dossier edit mode — every field of the agent, saved into the draft */
-.doss-edit { display: flex; flex-direction: column; gap: 10px; background: var(--bg-1); border: 1px solid rgba(79, 184, 160, 0.3); border-radius: 12px; padding: 13px 14px; margin-bottom: 20px; animation: settle 0.25s ease both; }
-.doss-edit label { display: flex; flex-direction: column; gap: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); }
-.doss-edit label em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--ink-3); font-size: 9.5px; }
-.doss-edit input, .doss-edit textarea { background: var(--bg-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; font-family: var(--font); resize: vertical; }
-.doss-edit input:focus, .doss-edit textarea:focus { outline: none; border-color: var(--accent); }
-.doss-edit-row2 { display: grid; grid-template-columns: 1fr 72px; gap: 8px; }
-.doss-edit-actions { display: flex; gap: 8px; margin-top: 2px; }
+.doss-edit { display: flex; flex-direction: column; gap: var(--sp-2); background: var(--s-card); border: 1px solid var(--accent); border-radius: var(--r-md); padding: var(--sp-3); margin-bottom: var(--sp-5); animation: settle 0.25s ease both; }
+.doss-edit label { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--t-1); font-family: var(--mono); text-transform: uppercase; letter-spacing: var(--track); color: var(--ink-3); }
+.doss-edit label em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--ink-3); font-size: var(--t-1); }
+.doss-edit input, .doss-edit textarea { background: var(--s-raised); border: 1px solid var(--line); color: var(--ink); border-radius: var(--r-sm); padding: var(--sp-2); font-size: var(--t-2); font-family: var(--font); resize: vertical; }
+.doss-edit input:focus, .doss-edit textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.doss-edit-row2 { display: grid; grid-template-columns: 1fr 72px; gap: var(--sp-2); }
+.doss-edit-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-0); }
 
 /* machine trays — the automations an agent operates, chips with health lights */
 /* the machine rack — a recessed slot flush under the owner's card */
 .oc-tray {
-  display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
-  max-width: 210px; margin-top: -4px; padding: 10px 8px 7px;
-  background: transparent; border: 0; padding: 8px 0 0;
+  display: flex; flex-wrap: wrap; gap: var(--sp-1); justify-content: center;
+  max-width: 210px; margin-top: calc(var(--sp-1) * -1);
+  background: transparent; border: 0; padding: var(--sp-2) 0 0;
 }
 .oc-tray.fail { border-color: rgba(224, 123, 106, 0.5); box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5), 0 6px 18px -8px rgba(224, 123, 106, 0.28); }
 .oc-tray.warn { border-color: rgba(217, 160, 91, 0.42); }
 .oc-mac {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--bg-2); border: 1px solid var(--line);
-  border-radius: 8px; padding: 5px 9px; cursor: pointer;
-  font-family: var(--mono); font-size: 9.5px; color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  background: var(--s-raised); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2); cursor: pointer;
+  font-family: var(--mono); font-size: var(--t-1); color: var(--ink-2);
   transition: border-color .18s var(--ease), transform .12s var(--ease), box-shadow .2s var(--ease);
 }
 .oc-mac:hover { border-color: var(--accent); color: var(--ink); transform: translateY(-1px); }
@@ -299,7 +421,7 @@
 .oc-mac.more { color: var(--ink-3); font-style: italic; }
 .oc-mac.dragging { opacity: 0.45; cursor: grabbing; }
 .oc-mac.more:hover { color: var(--accent); }
-.mac-emoji { font-size: 11px; }
+.mac-emoji { font-size: var(--t-2); }
 /* real vendor marks, tinted to the house so twelve logos read as one system.
    Full brand colour on hover — recognition when you want it, calm when you
    don't. */
@@ -309,71 +431,73 @@
    looked genuine, so everything else was raised to it rather than it lowered. */
 .mac-brand {
   width: 24px; height: 24px; flex: 0 0 24px; display: block;
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: 7px;
-  padding: 4px; box-sizing: border-box;
+  background: var(--s-overlay); border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: var(--sp-1); box-sizing: border-box;
   transition: transform .2s ease, box-shadow .2s ease;
 }
 .oc-mac:hover .mac-brand,
 .oc-mac.sel .mac-brand { transform: scale(1.06); box-shadow: 0 5px 14px -5px rgba(0, 0, 0, 0.85); }
 .mac-name { white-space: nowrap; max-width: 76px; overflow: hidden; text-overflow: ellipsis; }
 .mac-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; display: inline-block; }
-.mac-dot.ok { background: var(--accent); box-shadow: 0 0 6px rgba(79, 184, 160, 0.7); }
-.mac-dot.warn { background: var(--warn); box-shadow: 0 0 6px rgba(224, 180, 95, 0.7); }
-.mac-dot.fail { background: #e07b6a; box-shadow: 0 0 7px rgba(224, 123, 106, 0.8); animation: pulse 1.4s ease-in-out infinite; }
+/* the halos are drawn from the state colours themselves rather than from three
+   hardcoded rgba triplets that no longer matched any of them */
+.mac-dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok-wash); }
+.mac-dot.warn { background: var(--warn); box-shadow: 0 0 6px var(--warn-wash); }
+.mac-dot.fail { background: var(--fail); box-shadow: 0 0 7px var(--fail-wash); animation: pulse 1.4s ease-in-out infinite; }
 .mac-dot.none { background: var(--ink-3); }
 /* green, but it failed earlier in the window — a faint amber ring, never a tint */
-.mac-dot.ok.unstable { box-shadow: 0 0 6px rgba(79, 184, 160, 0.7), 0 0 0 2px rgba(224, 180, 95, 0.3); }
+.mac-dot.ok.unstable { box-shadow: 0 0 6px var(--ok-wash), 0 0 0 2px var(--warn); }
 
 /* automation dossier health header */
 .doss-health {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px;
-  padding: 10px 13px; margin-bottom: 16px; font-size: 11.5px; color: var(--ink-2);
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-4); font-size: var(--t-2); color: var(--ink-2);
 }
-.doss-health b { color: var(--ink); font-size: 12px; }
-.doss-health.fail { border-color: rgba(224, 123, 106, 0.5); }
-.doss-health.warn { border-color: rgba(224, 180, 95, 0.4); }
-.doss-health.ok { border-color: rgba(79, 184, 160, 0.35); }
-.doss-auto-when { margin-left: auto; font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+.doss-health b { color: var(--ink); font-size: var(--t-2); font-weight: var(--w-strong); }
+.doss-health.fail { border-color: var(--fail); }
+.doss-health.warn { border-color: var(--warn); }
+.doss-health.ok { border-color: var(--ok); }
+.doss-auto-when { margin-left: auto; font-size: var(--t-1); font-family: var(--mono); color: var(--ink-3); white-space: nowrap; }
 
 /* automations — machines an agent operates, listed in its dossier */
-.auto-badge { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--warn); background: rgba(224, 180, 95, 0.1); border: 1px solid rgba(224, 180, 95, 0.3); border-radius: 5px; padding: 2px 7px; vertical-align: middle; margin-left: 6px; }
-.doss-autos { display: flex; flex-direction: column; gap: 5px; }
-.doss-auto { display: flex; align-items: baseline; gap: 9px; text-align: left; background: var(--bg-1); border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; cursor: pointer; transition: border-color 0.15s; }
+.auto-badge { font-size: var(--t-1); font-family: var(--mono); text-transform: uppercase; letter-spacing: var(--track); color: var(--warn); background: var(--warn-wash); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-1); vertical-align: middle; margin-left: var(--sp-1); }
+.doss-autos { display: flex; flex-direction: column; gap: var(--sp-1); }
+.doss-auto { display: flex; align-items: baseline; gap: var(--sp-2); text-align: left; background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); cursor: pointer; transition: border-color 0.15s; }
 .doss-auto:hover { border-color: var(--warn); }
-.doss-auto-emoji { font-size: 13px; }
-.doss-auto-name { font-size: 12px; font-weight: 600; white-space: nowrap; }
-.doss-auto-role { font-size: 10.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doss-auto-emoji { font-size: var(--t-3); }
+.doss-auto-name { font-size: var(--t-2); font-weight: var(--w-strong); white-space: nowrap; }
+.doss-auto-role { font-size: var(--t-1); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.doss-foot { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
-.btn.danger { border-color: rgba(224, 123, 106, 0.45); color: #e07b6a; background: transparent; }
-.btn.danger:hover { background: rgba(224, 123, 106, 0.1); }
+.doss-foot { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-1); padding-top: var(--sp-4); border-top: 1px solid var(--line); }
+.btn.danger { border-color: var(--fail); color: var(--fail); background: transparent; }
+.btn.danger:hover { background: var(--fail-wash); }
 .bk-agents.unassigned { color: var(--ink-3); font-style: italic; }
 
 .pending {
-  position: relative; z-index: 2; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-  padding: 10px 26px; border-bottom: 1px solid var(--line); background: var(--warn-wash);
+  position: relative; z-index: 2; display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center;
+  padding: var(--sp-2) var(--sp-5); border-bottom: 1px solid var(--line); background: var(--warn-wash);
 }
 .pending-lead {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--warn); margin-right: 2px;
+  font-family: var(--mono); font-size: var(--t-1); letter-spacing: var(--track); text-transform: uppercase;
+  color: var(--warn); margin-right: var(--sp-0);
 }
 /* every pending change is its own undo button. A global discard makes one
    mis-drop cost every other edit, so people stop dragging entirely. */
 .pending-item {
-  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-  font-size: 11.5px; font-family: var(--mono); color: var(--ink-2);
-  background: var(--bg-1); border: 1px solid var(--line); border-radius: 100px;
-  padding: 4px 6px 4px 12px;
+  display: inline-flex; align-items: center; gap: var(--sp-2); cursor: pointer;
+  font-size: var(--t-2); font-family: var(--mono); color: var(--ink-2);
+  background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
   transition: border-color .18s var(--ease), color .18s ease, transform .16s var(--ease);
 }
 .pending-item i {
-  font-style: normal; font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--warn); border: 1px solid rgba(184,134,44,.3); border-radius: 100px; padding: 2px 7px;
+  font-style: normal; font-size: var(--t-1); letter-spacing: var(--track); text-transform: uppercase;
+  color: var(--warn); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-1);
   transition: background .18s ease, color .18s ease;
 }
 .pending-item:hover { border-color: var(--warn); color: var(--ink); transform: translateY(-1px); }
-.pending-item:hover i { background: var(--warn); color: var(--bg-1); }
+.pending-item:hover i { background: var(--warn); color: var(--s-card); }
 
 /* the lane lights up as a drop target, so a near-miss is impossible */
 .oc-row.lanes > .oc-child.lane-over,
@@ -381,22 +505,23 @@
   border-color: var(--accent); background: var(--accent-dim);
   box-shadow: 0 0 0 3px var(--accent-dim), var(--sh-2);
 }
-.pnl-err { position: relative; z-index: 2; padding: 10px 26px; color: #e07b6a; font-size: 12.5px; }
+.pnl-err { position: relative; z-index: 2; padding: var(--sp-2) var(--sp-5); color: var(--fail); font-size: var(--t-2); }
 
 /* layout — 100% so a HOST container decides the height (embedded panel);
    the standalone app gives html/body/#root 100%, so served behaviour is unchanged. */
 .pnl { height: 100%; min-height: 480px; }
 .body { position: relative; z-index: 1; flex: 1; display: flex; min-height: 0; }
-.tree { position: relative; flex: 1; min-width: 0; padding: 24px 26px 24px; overflow: hidden;
+.tree { position: relative; flex: 1; min-width: 0; padding: var(--sp-5); overflow: hidden;
   display: flex; flex-direction: column;
-  /* the ground plane: a faint dot grid (engineered surface, drag affordance)
-     + a verdigris pool anchoring the eye at the root. Static — capture-safe. */
-  background:
-    radial-gradient(900px 420px at 50% 120px, rgba(79, 184, 160, 0.05), transparent 70%),
-    radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.5px);
-  background-size: auto, 28px 28px;
+  background: var(--s-ground);
+  /* the ground plane: a faint dot grid (engineered surface, drag affordance).
+     The verdigris pool that used to sit under it was the last survivor of a
+     palette this board dropped when it went wine-and-brass, and it was a fifth
+     surface nobody had named. Static, so it stays capture-safe. */
+  background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.5px);
+  background-size: 28px 28px;
 }
-.tree-hint { color: var(--ink-3); font-family: var(--mono); font-size: 10px; letter-spacing: .05em; margin: 0 0 14px; text-align: center; }
+.tree-hint { color: var(--ink-3); font-family: var(--mono); font-size: var(--t-1); letter-spacing: .05em; margin: 0 0 var(--sp-4); text-align: center; }
 
 /* ── RANK HEADERS (from the ministry organigram) ───────────────────────────
    Rank is NAMED, never inferred from indentation. Roman numerals + a rule
@@ -407,19 +532,21 @@
 .ranks {
   display: grid;
   grid-template-columns: 232px var(--rail-w, 56px) 268px var(--rail-w, 56px) minmax(232px, 300px) var(--rail-w, 56px) 1fr;
-  margin: 0 0 16px; padding: 0 16px; flex: 0 0 auto;
+  margin: 0 0 var(--sp-4); padding: 0 var(--sp-4); flex: 0 0 auto;
 }
 .rank:nth-child(1) { grid-column: 1; }
 .rank:nth-child(2) { grid-column: 3; }
 .rank:nth-child(3) { grid-column: 5; }
 .rank:nth-child(4) { grid-column: 7; }
 .rank {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--ink-3); padding-bottom: 8px; border-bottom: 1px solid rgba(217, 160, 91, 0.16);
+  font-family: var(--mono); font-size: var(--t-1); letter-spacing: var(--track); text-transform: uppercase;
+  color: var(--ink-2); padding-bottom: var(--sp-2); border-bottom: 1px solid var(--line);
   position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.rank b { color: var(--brass); font-weight: 500; margin-right: 7px; }
-.rank::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 24px; height: 1px; background: var(--brass); }
+/* the numeral was raw --brass, which is the DARK theme's brass: 2.22:1 on warm
+   paper. --accent is the same voice, resolved per theme. */
+.rank b { color: var(--accent); font-weight: var(--w-strong); margin-right: var(--sp-1); }
+.rank::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 24px; height: 1px; background: var(--accent); }
 
 /* the constellation — the hero's own atmosphere, drawn once behind the rack.
    Gradient + points only; NO grain/noise overlay (it read as a blurry filter
@@ -451,57 +578,58 @@
 .chart-fit.zoomed { overflow: auto; justify-content: flex-start; }
 .chart-fit.zoomed .chart { transform-origin: top left; }
 .zoomer {
-  position: absolute; right: 34px; bottom: 32px; z-index: 3; display: flex; align-items: center; gap: 2px;
-  font-family: var(--mono); font-size: 11px; color: var(--ink-2);
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  position: absolute; right: var(--sp-6); bottom: var(--sp-6); z-index: 3; display: flex; align-items: center; gap: var(--sp-0);
+  font-family: var(--mono); font-size: var(--t-2); color: var(--ink-2);
+  background: var(--s-overlay); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-1);
+  box-shadow: var(--sh-2);
 }
 .zoomer button {
-  all: unset; cursor: pointer; padding: 2px 8px; border-radius: 5px; color: var(--ink-2);
-  font-family: var(--mono); font-size: 12px; line-height: 1.4;
+  all: unset; cursor: pointer; padding: var(--sp-0) var(--sp-2); border-radius: var(--r-sm); color: var(--ink-2);
+  font-family: var(--mono); font-size: var(--t-2); line-height: 1.4;
 }
 .zoomer button:hover { background: var(--accent-dim); color: var(--ink); }
 .zoomer button.on { color: var(--accent); }
-.zoomer-pct { min-width: 40px; text-align: center; color: var(--ink-3); }
-.zoomer-sep { width: 1px; height: 16px; background: var(--line); margin: 0 2px; }
+.zoomer-pct { min-width: 40px; text-align: center; color: var(--ink-2); }
+.zoomer-sep { width: 1px; height: 16px; background: var(--line); margin: 0 var(--sp-0); }
 
 /* ── the ledger shelf: every bucket as a pigeonhole, hover a role to see its
    reach. Docked under the chart, always visible — the memory half of the
    two pillars (structure above, memory below), never a separate tab. */
 .ledger-shelf {
-  position: relative; z-index: 2; flex: 0 0 auto; margin-top: 14px;
-  padding: 10px 16px 12px; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--bg-1); box-shadow: var(--sh-2);
+  position: relative; z-index: 2; flex: 0 0 auto; margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--r-lg);
+  border: 1px solid var(--line); background: var(--s-card); box-shadow: var(--sh-2);
   width: min(1180px, 92vw);
 }
 .shelf-label {
-  display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--brass); margin-bottom: 8px;
+  display: block; font-family: var(--mono); font-size: var(--t-1); letter-spacing: var(--track);
+  text-transform: uppercase; color: var(--accent); margin-bottom: var(--sp-2);
 }
-.shelf-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.shelf-slots { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .shelf-slot {
-  font-family: var(--mono); font-size: 10px; color: var(--ink-3);
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: 5px;
-  padding: 4px 9px; transition: border-color .18s ease, color .18s ease, box-shadow .25s ease, transform .18s ease;
+  font-family: var(--mono); font-size: var(--t-1); color: var(--ink-2);
+  background: var(--s-raised); border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: var(--sp-1) var(--sp-2); transition: border-color .18s ease, color .18s ease, box-shadow .25s ease, transform .18s ease;
 }
+/* lit reads through the theme's own accent, not a hardcoded gold that was
+   invisible on paper and duplicated the brass family a third time */
 .shelf-slot.lit {
-  color: var(--brass-hi); border-color: var(--brass); transform: translateY(-1px);
-  box-shadow: 0 0 0 1px rgba(201, 160, 74, 0.3), 0 6px 16px -6px rgba(201, 160, 74, 0.5);
-  background: rgba(201, 160, 74, 0.1);
+  color: var(--accent-2); border-color: var(--accent); transform: translateY(-1px);
+  box-shadow: var(--sh-1); background: var(--accent-dim);
 }
 .shelf-slot.sealed { color: var(--ink-3); font-style: italic; border-style: dashed; opacity: 0.75; }
-.shelf-slot.sealed.lit { color: var(--ink-3); border-color: var(--line); background: var(--bg-2); box-shadow: none; transform: none; }
+.shelf-slot.sealed.lit { color: var(--ink-3); border-color: var(--line); background: var(--s-raised); box-shadow: none; transform: none; }
 @media (prefers-reduced-motion: reduce) { .shelf-slot { transition: none; } }
 
 /* the law toggle in the top bar */
 .law-toggle { font-family: var(--mono); letter-spacing: 0.02em; }
-.law-toggle.on { color: var(--brass-hi); border-color: var(--brass); background: rgba(201, 160, 74, 0.12); }
+.law-toggle.on { color: var(--accent-2); border-color: var(--accent); background: var(--accent-dim); }
 /* min-width:max-content keeps connectors geometrically correct at natural size
    BEFORE scaling; the measured --fit shrinks the whole block toward its head. */
 /* transform is set inline by Panel.tsx (see the note there) — only origin,
    sizing and the easing live here. */
 .chart {
-  min-width: max-content; padding: 8px 14px 20px;
+  min-width: max-content; padding: var(--sp-2) var(--sp-4) var(--sp-5);
   transform-origin: top center; position: relative; /* the rail plane's origin */
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); will-change: transform;
 }
@@ -512,7 +640,7 @@
    not an operator. */
 .law-plate { width: 232px; cursor: pointer; }
 .law-plate .ag-ava { font-family: var(--display); color: var(--accent); }
-.law-plate .ag-name { color: var(--accent); font-size: 13px; }
+.law-plate .ag-name { color: var(--accent); font-size: var(--t-3); }
 .law-plate .ag-role { word-break: break-all; }
 /* ── THE CASCADE (master-key structure) ───────────────────────────────────
    Rank runs LEFT TO RIGHT, one column each, exactly as a master-key chart
@@ -578,7 +706,7 @@
 .oc-row.lanes {
   flex-direction: column;
   align-items: stretch;
-  gap: 14px;
+  gap: var(--sp-5);
   padding-top: 0;
   width: 100%;
 }
@@ -589,12 +717,12 @@
   flex: 1 1 auto;
   position: relative;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--surface-tray);
-  padding: 16px 18px 18px;
+  border-radius: var(--r-lg);
+  background: var(--s-raised);
+  padding: var(--sp-4);
   transition: border-color .25s ease, box-shadow .35s var(--ease);
 }
-.oc-row.lanes > .oc-child:hover { border-color: var(--line-2, #d9d3c9); box-shadow: var(--sh-2); }
+.oc-row.lanes > .oc-child:hover { border-color: var(--line-2); box-shadow: var(--sh-2); }
 
 /* ── THE PACK: rank-III units that have no staff ───────────────────────────
    A lane is a shelf for a department AND ITS PEOPLE. A unit with nobody under
@@ -605,20 +733,20 @@
 .oc-row.solo-pack {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(278px, 1fr));
-  gap: 14px;
+  gap: var(--sp-3);
   width: 100%;
-  margin-top: 14px;
+  margin-top: var(--sp-5);
   align-items: stretch;
 }
 .oc-row.solo-pack > .oc-child {
   position: relative;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--surface-tray);
-  padding: 14px;
+  border-radius: var(--r-lg);
+  background: var(--s-raised);
+  padding: var(--sp-3);
   transition: border-color .25s ease, box-shadow .35s var(--ease);
 }
-.oc-row.solo-pack > .oc-child:hover { border-color: var(--line-2, #d9d3c9); box-shadow: var(--sh-2); }
+.oc-row.solo-pack > .oc-child:hover { border-color: var(--line-2); box-shadow: var(--sh-2); }
 /* the pack owns its connectors, exactly as the lanes do */
 .oc-row.solo-pack > .oc-child::before,
 .oc-row.solo-pack > .oc-child::after { display: none; }
@@ -647,11 +775,11 @@
     "macs rail staff";
   grid-template-rows: auto 1fr;
   align-items: start;
-  gap: 10px 0;
+  gap: var(--sp-2) 0;
 }
 .oc-row.lanes > .oc-child > .ocn > .ag      { grid-area: head; }
 .oc-row.lanes > .oc-child > .ocn > .oc-tray { grid-area: macs; }
-.oc-row.lanes > .oc-child > .ocn > .oc-row  { grid-area: staff; margin-left: 4px; }
+.oc-row.lanes > .oc-child > .ocn > .oc-row  { grid-area: staff; margin-left: var(--sp-1); }
 
 /* the rail: a vertical brass spine for the department, capped where it meets
    the head, with one orthogonal branch reaching into the staff block. This
@@ -671,32 +799,32 @@
 /* semantic zoom lever: the rail itself is the fold/unfold control at the
    department level — house → department → role, one click at a time. */
 .oc-down.foldable { cursor: pointer; }
-.oc-down.foldable:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 4px; }
+.oc-down.foldable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); }
 .oc-fold-glyph {
   position: absolute; left: 50%; top: 22px; transform: translate(-50%, -50%);
-  font-style: normal; font-size: 10px; line-height: 1; width: 15px; height: 15px;
+  font-style: normal; font-size: var(--t-1); line-height: 1; width: 16px; height: 16px;
   display: grid; place-items: center; border-radius: 50%;
-  background: var(--bg-1); border: 1px solid var(--line-2); color: var(--accent);
+  background: var(--s-card); border: 1px solid var(--line-2); color: var(--accent);
   transition: transform .15s ease, background .15s ease;
 }
-.oc-down.foldable:hover .oc-fold-glyph { background: rgba(201, 160, 74, 0.18); transform: translate(-50%, -50%) scale(1.15); }
+.oc-down.foldable:hover .oc-fold-glyph { background: var(--accent-dim); transform: translate(-50%, -50%) scale(1.15); }
 .oc-down.folded .oc-fold-glyph { color: var(--ink-2); border-color: var(--line); }
 
 /* the folded department: head visible, staff summarised to one line — the
    "department" rung of house → department → role. */
 .oc-folded-summary {
   grid-area: staff; align-self: center; justify-self: start; text-align: left;
-  background: none; border: 1px dashed var(--line); border-radius: 8px;
-  padding: 9px 13px; margin-left: 4px; cursor: pointer;
-  font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+  background: none; border: 1px dashed var(--line-2); border-radius: var(--r-sm);
+  padding: var(--sp-2) var(--sp-3); margin-left: var(--sp-1); cursor: pointer;
+  font-family: var(--mono); font-size: var(--t-2); color: var(--ink-2);
   transition: border-color .15s ease, color .15s ease;
 }
-.oc-folded-summary:hover { border-color: var(--brass); color: var(--brass-hi); }
+.oc-folded-summary:hover { border-color: var(--accent); color: var(--accent-2); }
 /* "show the law": the SAME rails, re-read as authority. The SVG plane swaps to
    a travelling dashed brass so the law is seen flowing down the cascade. */
-.rail-line { stroke: var(--line-2, #d9d3c9); stroke-width: 1.5; stroke-linecap: round; fill: none; }
+.rail-line { stroke: var(--line-2); stroke-width: 1.5; stroke-linecap: round; fill: none; }
 .rail-dash { stroke: var(--accent-2); stroke-width: 1; fill: none; stroke-dasharray: 2 9; opacity: 0; }
-.law-on .rail-line { stroke: var(--brass-hi); stroke-width: 1.9; opacity: .9; }
+.law-on .rail-line { stroke: var(--accent); stroke-width: 1.9; opacity: .9; }
 .law-on .rail-dash { opacity: .95; animation: rail-flow 700ms linear infinite; }
 @keyframes rail-flow { to { stroke-dashoffset: -11; } }
 @media (prefers-reduced-motion: reduce) { .law-on .rail-dash { animation: none; } }
@@ -705,7 +833,7 @@
    vendor marks read as a list of systems rather than a scatter of chips */
 .oc-row.lanes > .oc-child > .ocn > .oc-tray {
   display: flex; flex-direction: column; align-items: stretch;
-  gap: 4px; margin: 0; padding: 0; max-width: 232px;
+  gap: var(--sp-1); margin: 0; padding: 0; max-width: 232px;
 }
 .oc-row.lanes > .oc-child > .ocn > .oc-tray > .oc-mac { justify-content: flex-start; width: 100%; }
 .oc-row.lanes > .oc-child > .ocn > .oc-tray > .oc-mac .mac-name { max-width: none; }
@@ -728,7 +856,7 @@
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--sp-2);
   margin: 0;
   padding: 0;
   max-width: none;
@@ -742,7 +870,7 @@
 .oc-row.lanes > .oc-child > .ocn > .oc-row > .oc-child::after { display: none; }
 
 @media (max-width: 820px) {
-  .oc-row.lanes > .oc-child > .ocn { grid-template-columns: 1fr; gap: 12px; }
+  .oc-row.lanes > .oc-child > .ocn { grid-template-columns: 1fr; gap: var(--sp-3); }
 }
 /* Connectors are drawn by the SVG rail plane now, not by pseudo-elements. The
    old fan drop-lines/elbows here would double every rail. */
@@ -753,11 +881,14 @@
    branch into a fixed cell — that overflowed and collided with the next branch) */
 .oc-row.wrap {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
-  gap: 10px 18px; margin: 0 auto; padding: 12px 14px 14px;
+  gap: var(--sp-2) var(--sp-4); margin: 0 auto; padding: var(--sp-3);
   max-width: min(100%, 840px);
-  border: 1px solid var(--line); border-radius: 18px; background: rgba(16, 19, 26, 0.35);
+  /* the fill was rgba(16,19,26,.35), a cold blue-grey left over from a palette
+     this board dropped when it went wine-and-brass, and on paper it read as a
+     dirty smudge. It is a container, so it takes the container rung. */
+  border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--s-raised);
 }
-.oc-row.wrap > .oc-child { padding: 8px 4px 0; flex: 0 0 auto; }
+.oc-row.wrap > .oc-child { padding: var(--sp-2) var(--sp-1) 0; flex: 0 0 auto; }
 .oc-row.wrap > .oc-child::before, .oc-row.wrap > .oc-child::after { display: none; }
 
 /* ── THE PLATE ────────────────────────────────────────────────────────────
@@ -776,25 +907,25 @@
 .ag {
   position: relative; display: flex; flex-direction: column; align-items: stretch;
   width: calc(300px - min(var(--d, 0), 2) * 22px); /* 300 / 278 / 256 by rank */
-  padding: 15px 18px 13px 21px; text-align: left;
-  background: var(--bg-1);
-  border: 1px solid var(--line); border-radius: 14px; cursor: grab; overflow: hidden;
+  padding: var(--sp-4); text-align: left;
+  background: var(--s-card);
+  border: 1px solid var(--line); border-radius: var(--r-md); cursor: grab; overflow: hidden;
   box-shadow: var(--sh-2);
   transition: box-shadow .22s var(--ease), transform .22s var(--ease), border-color .18s ease, opacity .18s ease;
   animation: settle .45s var(--settle) both;
 }
-/* the spine — health as the card's own edge */
-.ag::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--ink-3); transition: background .2s ease;
-}
-.ag.h-ok::before { background: var(--ok); }
-.ag.h-warn::before { background: var(--warn); }
-.ag.h-fail::before { background: var(--fail); }
-/* an unhealthy card also carries a wash, so the state survives a greyscale
-   print and never rests on hue alone */
-.ag.h-warn { background: linear-gradient(180deg, var(--warn-wash), var(--bg-1) 52%); border-color: #ecd9ae; }
-.ag.h-fail { background: linear-gradient(180deg, var(--fail-wash), var(--bg-1) 52%); border-color: #edc9bf; }
+/* THE 4px HEALTH SPINE IS GONE. A coloured edge >1px used as an accent is a
+   banned pattern in the house design laws, and this file already says so
+   twenty lines above .doss-rep, where the same stripe was removed for the same
+   reason and never removed here. It was also saying nothing new: the state is
+   already on .ag-light (a lamp, top right), on .ag-fact-health (a dot AND the
+   word), and on the wash below. Three redundant readings, one banned.
+   An unhealthy card carries a wash and a tinted full border, so the state
+   survives a greyscale print and never rests on hue alone. A HEALTHY card is
+   left completely undecorated, which is the correct thing for "nothing is
+   wrong" to look like. */
+.ag.h-warn { background: linear-gradient(180deg, var(--warn-wash), var(--s-card) 52%); border-color: var(--warn); }
+.ag.h-fail { background: linear-gradient(180deg, var(--fail-wash), var(--s-card) 52%); border-color: var(--fail); }
 @keyframes settle { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
 .ag:hover { transform: translateY(-2px); box-shadow: var(--sh-3); border-color: var(--line-2); }
 .ag:active { transform: translateY(0) scale(.995); transition-duration: .08s; }
@@ -806,12 +937,12 @@
 /* WHERE IT BELONGS — reads first, so a card lifted out of its lane still
    knows its own place. */
 .ag-eyebrow {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--accent); display: block; margin-bottom: 7px;
+  font-family: var(--mono); font-size: var(--t-1); letter-spacing: var(--track); text-transform: uppercase;
+  color: var(--accent); display: block; margin-bottom: var(--sp-1);
 }
 /* WHAT FLOWS OUT — the consequence line. Plain English, never glyphs. */
 .ag-flows {
-  display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 10px;
+  display: block; font-size: var(--t-2); color: var(--ink-3); margin-top: var(--sp-3);
   font-variant-numeric: tabular-nums;
 }
 
@@ -822,7 +953,7 @@
    bubble so nine departments never blink in unison (a synchronised board
    reads as a screensaver; a staggered one reads as a building). */
 .ag-light {
-  position: absolute; top: 13px; right: 14px; width: 8px; height: 8px; border-radius: 50%;
+  position: absolute; top: var(--sp-4); right: var(--sp-4); width: 8px; height: 8px; border-radius: 50%;
   background: var(--ink-3);
 }
 .ag-light::after {
@@ -843,187 +974,225 @@
 @media (prefers-reduced-motion: reduce) { .ag-light::after { animation: none; } }
 
 /* rank I·II — the GM. Polished brass: the only plate that is lit rather than lit-upon. */
-.ag.root { cursor: default; width: 268px; padding: 15px 17px;
+.ag.root { cursor: default; width: 268px;
   background: var(--surface-lift);
   border-color: var(--surface-lift-edge); box-shadow: var(--sh-3); }
-.ag.root .ag-name { font-size: 14.5px; }
+/* the GM's name used to be set SMALLER (14.5px) than a department head's
+   (18px), which inverted the rank the whole board exists to show. It now takes
+   the same step, and its rank reads through the lit plate and the larger mark,
+   exactly as the comment above always claimed. */
 
 /* plate header: the mark sits BESIDE the name, not above it — a name plate,
    not a business card. Staff plates carry no mark at all (see Panel.tsx): a
    brass plaque does not have a cartoon on it, and 51 identical 🤖 was the
    cheapest token on the board. */
-.ag-head { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.ag-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .ag-ava {
-  width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center; font-size: 14px;
-  border-radius: 9px; background: var(--accent-dim); border: 1px solid #eadcc3;
+  width: 26px; height: 26px; flex: 0 0 26px; display: grid; place-items: center; font-size: var(--t-3);
+  border-radius: var(--r-sm); background: var(--s-raised); border: 1px solid var(--line);
 }
-.ag.root .ag-ava { width: 30px; height: 30px; flex-basis: 30px; font-size: 16px; border-color: rgba(239, 195, 137, 0.45); }
+.ag.root .ag-ava { width: 32px; height: 32px; flex-basis: 32px; font-size: var(--t-4); }
 
-/* the name — engraved: a dark groove under, a hairline of light above */
+/* THE HIERARCHY. Two name steps, 1.25x apart, and the gap is carried by the
+   FACE as much as by the size: a department reads in the display serif, a
+   staff plate in the UI sans. That is a real difference at any size, which
+   matters because the weights this page loads stop at 500 and every 600/650/
+   700 in the old file was rendering as 500 anyway. */
 .ag-name {
-  font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -0.015em;
-  line-height: 1.18; color: var(--ink);
+  font-family: var(--display); font-size: var(--t-4); font-weight: var(--w-display); letter-spacing: -0.015em;
+  line-height: 1.15; color: var(--ink);
   white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
 }
-/* staff plates: quieter, lighter weight — rank in the type as well as the metal */
-.ag.staff .ag-name { font-family: var(--font); font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+/* staff plates: quieter, one step down, and the sans face. Rank shows in the
+   type as well as in the metal. */
+.ag.staff .ag-name { font-family: var(--font); font-size: var(--t-3); font-weight: var(--w-strong); letter-spacing: -0.01em; color: var(--ink); }
 
+/* the name and its role are ONE thought, so they sit sp-1 apart; the role and
+   the machinery below it are not, so that gap is sp-3. */
 .ag-role {
-  font-size: 12.5px; line-height: 1.5; color: var(--ink-2); margin-top: 6px;
+  font-size: var(--t-2); line-height: 1.5; color: var(--ink-2); margin-top: var(--sp-1);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.ag-meta { display: flex; align-items: center; gap: 9px; margin-top: 7px; }
-.ag-meta em { font-style: normal; font-family: var(--mono); font-size: 9px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ag-meta { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); }
+.ag-meta em { font-style: normal; font-family: var(--mono); font-size: var(--t-1); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ag-kids {
-  font-family: var(--mono); font-size: 8.5px; color: var(--brass); border: 1px solid rgba(217, 160, 91, 0.28);
-  border-radius: 3px; padding: 2px 7px; font-variant-numeric: tabular-nums; text-transform: uppercase; letter-spacing: 0.1em;
+  font-family: var(--mono); font-size: var(--t-1); color: var(--accent); border: 1px solid var(--line-2);
+  border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-1); font-variant-numeric: tabular-nums; text-transform: uppercase; letter-spacing: var(--track);
 }
 
 /* ── the plate face: health · bucket reach · rule count · last report ──────
    Replaces a role line that used to just repeat the name ("Lift Engineer" /
    "Lift Engineer — Engineering"). Four facts, left-aligned, mono, no chrome. */
+/* the facts are a separate REGION of the plate, so the gap above them is the
+   widest on the card (sp-4) and a rule closes it */
 .ag-facts {
-  display: flex; align-items: center; gap: 10px;
-  margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--line);
 }
-.ag-fact { font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
+.ag-fact { font-style: normal; font-size: var(--t-2); font-weight: var(--w-strong); color: var(--ink-2); }
 .ag-fact-health.ok { color: var(--ok); }
 .ag-fact-health.warn { color: var(--warn); }
 .ag-fact-health.fail { color: var(--fail); }
-.ag-fact-health.none { color: var(--ink-3); font-weight: 500; }
+.ag-fact-health.none { color: var(--ink-3); font-weight: var(--w-body); }
 .fact-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); flex: 0 0 auto; }
-.ag-fact-health.ok .fact-dot { background: var(--ok); box-shadow: 0 0 6px rgba(139, 233, 176, 0.75); }
-.ag-fact-health.warn .fact-dot { background: var(--brass); box-shadow: 0 0 6px rgba(217, 160, 91, 0.85); }
-.ag-fact-health.fail .fact-dot { background: var(--fail); box-shadow: 0 0 7px rgba(224, 123, 106, 0.85); }
+.ag-fact-health.ok .fact-dot { background: var(--ok); }
+.ag-fact-health.warn .fact-dot { background: var(--warn); }
+.ag-fact-health.fail .fact-dot { background: var(--fail); }
 .ag-fact-health.ok, .ag-fact-health.warn, .ag-fact-health.fail { color: var(--ink-2); }
-.ag-fact-report { margin-left: auto; color: var(--ink-3); font-weight: 400; font-family: var(--mono); font-size: 10px; }
+.ag-fact-report { margin-left: auto; color: var(--ink-3); font-weight: var(--w-body); font-family: var(--mono); font-size: var(--t-1); }
 /* the expected beat, quieter than the fact it qualifies — it is the ruler, not
    the measurement, so it must never out-shout "reported 4d ago". */
-.ag-cadence { font-weight: 400; color: var(--ink-3); opacity: .62; }
+.ag-cadence { font-weight: var(--w-body); color: var(--ink-3); opacity: .62; }
 
 /* "show the law": the boot-order chain, printed on the plate only while the
    toggle is on — the product's core idea, made literal per plate. */
 .ag-law { display: none; }
 .law-on .ag-law {
-  display: block; margin-top: 7px; padding-top: 7px; border-top: 1px dashed rgba(217, 160, 91, 0.32);
-  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.03em; color: var(--brass-hi);
+  display: block; margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px dashed var(--line-2);
+  font-family: var(--mono); font-size: var(--t-1); letter-spacing: 0.03em; color: var(--accent);
   line-height: 1.6; word-break: break-word;
 }
-.ag-law-arrow { font-style: normal; color: var(--brass); margin: 0 3px; opacity: 0.85; }
-.law-on.ag { box-shadow: 0 0 0 1px rgba(217, 160, 91, 0.3), 0 16px 34px -18px rgba(0, 0, 0, 0.85); }
+.ag-law-arrow { font-style: normal; color: var(--accent); margin: 0 var(--sp-0); opacity: 0.85; }
+.law-on.ag { box-shadow: 0 0 0 1px var(--accent), var(--sh-2); }
 
-/* the dossier */
+/* the dossier: the overlay rung. The blur it used to carry was doing nothing
+   (it sat on an opaque fill) and the only thing on this board that read as
+   glass. */
 .doss {
   width: 340px; flex: 0 0 340px; border-left: 1px solid var(--line);
-  background: var(--bg-1); backdrop-filter: blur(10px);
-  padding: 26px 24px 40px; overflow-y: auto; animation: slidein 0.25s ease both;
+  background: var(--s-overlay);
+  padding: var(--sp-5) var(--sp-5) var(--sp-7); overflow-y: auto; animation: slidein 0.25s ease both;
 }
 @keyframes slidein { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
-.doss-head { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
-.doss-emoji { font-size: 30px; flex: none; }
-.doss h2 { margin: 0; font-size: 18px; min-width: 0; }
+/* THE CLOSE BUTTON HAD NO STYLE AT ALL. It was shipping as a raw user-agent
+   <button>: the browser's own #f0f0f0 fill, its own 13.3px font and its own
+   1px/6px padding, which is why the board carried an eleventh surface, a
+   nineteenth type step and a grey OS chip in the corner of an otherwise warm
+   dossier. It is a control, so it takes the control shape. */
+.doss-close {
+  margin-left: auto; flex: none; display: grid; place-items: center;
+  width: 26px; height: 26px; padding: 0; cursor: pointer;
+  background: var(--s-raised); border: 1px solid var(--line); border-radius: var(--r-sm);
+  color: var(--ink-2); font-family: var(--font); font-size: var(--t-2); line-height: 1;
+  transition: border-color .15s ease, color .15s ease;
+}
+.doss-close:hover { border-color: var(--accent); color: var(--accent); }
+
+.doss-head { display: flex; gap: var(--sp-3); align-items: center; margin-bottom: var(--sp-1); }
+.doss-emoji { font-size: var(--t-6); flex: none; }
+.doss h2 { margin: 0; font-size: var(--t-4); font-family: var(--display); font-weight: var(--w-display); line-height: 1.15; min-width: 0; }
 /* full panel width: a body of four seats is a list, not a subtitle squeezed
    beside three buttons. Middots become the wrap points. */
-.doss-role { margin: 0 0 14px; color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+.doss-role { margin: 0 0 var(--sp-4); color: var(--ink-2); font-size: var(--t-2); line-height: 1.55; }
 
-.doss-chain { font-size: 11px; color: var(--ink-3); margin-bottom: 18px; line-height: 1.7; }
-.doss-chain i { font-style: normal; margin: 0 5px; }
-.doss-chain b { font-weight: 500; }
-.doss-chain b.me { color: var(--accent); font-weight: 650; }
+.doss-chain { font-size: var(--t-2); color: var(--ink-3); margin-bottom: var(--sp-5); line-height: 1.7; }
+.doss-chain i { font-style: normal; margin: 0 var(--sp-1); }
+.doss-chain b { font-weight: var(--w-body); }
+.doss-chain b.me { color: var(--accent); font-weight: var(--w-strong); }
 
-.doss-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
-.doss-stat { background: var(--bg-1); border: 1px solid var(--line); border-radius: 11px; padding: 11px 8px; text-align: center; }
-.doss-n { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.doss-l { font-size: 9.5px; color: var(--ink-3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+/* the stat tiles are the one place on the old board where the scale was
+   already doing its job. They keep the biggest step and the label under each
+   drops to the micro rail, so the pair reads as number-then-caption. */
+.doss-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.doss-stat { background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-2); text-align: center; }
+.doss-n { font-size: var(--t-5); font-weight: var(--w-strong); font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: -0.02em; }
+.doss-l { font-size: var(--t-1); font-family: var(--mono); color: var(--ink-3); margin-top: var(--sp-1); text-transform: uppercase; letter-spacing: var(--track); }
 
-.doss section { margin-bottom: 20px; }
-.doss h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); margin: 0 0 9px; }
-.doss-empty { color: var(--ink-3); font-size: 12px; margin: 0; }
-.doss-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
-.doss-rules li { font-family: var(--mono); font-size: 11px; color: var(--ink-2); background: var(--bg-1); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; word-break: break-all; }
-.doss-rules li.own { color: var(--ink); border-color: rgba(79, 184, 160, 0.35); }
-.doss-rules em { color: var(--ink-3); font-style: normal; font-size: 9.5px; margin-left: 5px; }
-.doss-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.doss-reps { display: flex; flex-direction: column; gap: 7px; }
+.doss section { margin-bottom: var(--sp-5); }
+.doss h3 { font-size: var(--t-1); font-family: var(--mono); text-transform: uppercase; letter-spacing: var(--track); color: var(--ink-3); margin: 0 0 var(--sp-2); }
+.doss-empty { color: var(--ink-3); font-size: var(--t-2); margin: 0; }
+.doss-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+.doss-rules li { font-family: var(--mono); font-size: var(--t-2); color: var(--ink-2); background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2); word-break: break-all; }
+.doss-rules li.own { color: var(--ink); border-color: var(--accent); }
+.doss-rules em { color: var(--ink-3); font-style: normal; font-size: var(--t-1); margin-left: var(--sp-1); }
+.doss-chips { display: flex; gap: var(--sp-1); flex-wrap: wrap; }
+.doss-reps { display: flex; flex-direction: column; gap: var(--sp-1); }
 /* No side-stripe. It was a 2px brass border-left that said nothing the
    status dot doesn't already say properly, and a coloured side-stripe on a
    card is a banned pattern in the house design laws. Full 1px border; the
    whole edge answers on hover. */
 .doss-rep {
-  background: var(--bg-1); border: 1px solid var(--line);
-  border-radius: 9px; padding: 9px 11px; animation: settle 0.35s ease both;
+  background: var(--s-card); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); animation: settle 0.35s ease both;
 }
-.doss-rep-top { display: flex; align-items: baseline; gap: 9px; }
-.doss-rep-when { font-size: 10px; color: var(--accent-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.doss-rep-label { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.doss-rep-sum { margin: 5px 0 0; font-size: 11.5px; color: var(--ink-2); line-height: 1.55; }
+.doss-rep-top { display: flex; align-items: baseline; gap: var(--sp-2); }
+.doss-rep-when { font-size: var(--t-1); font-family: var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.doss-rep-label { font-size: var(--t-2); font-weight: var(--w-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doss-rep-sum { margin: var(--sp-1) 0 0; font-size: var(--t-2); color: var(--ink-2); line-height: 1.55; }
 .doss-rep.tap { cursor: pointer; transition: border-color .12s ease, background .12s ease; }
 .doss-rep.tap:hover { border-color: var(--accent); background: var(--accent-dim); }
-.doss-rep.tap:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.doss-rep-caret { margin-left: auto; font-size: 10px; color: var(--ink-2); align-self: center; }
+.doss-rep-caret { margin-left: auto; font-size: var(--t-1); color: var(--ink-2); align-self: center; }
 .rep-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; align-self: center; }
-.rep-dot.ok { background: var(--accent); } .rep-dot.warn { background: var(--warn); } .rep-dot.fail { background: #e07b6a; }
-.rep-ok { color: var(--accent); } .rep-warn { color: var(--warn); } .rep-fail { color: #e07b6a; }
-.doss-rep-detail { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.7; color: var(--ink-2); font-family: var(--mono); word-break: break-word; }
-.doss-rep-detail .doss-l { display: inline-block; min-width: 74px; opacity: .6; text-transform: uppercase; letter-spacing: .04em; font-size: 9.5px; }
-.chip { transition: transform .16s var(--ease), background .18s ease; font-size: 11px; background: var(--accent-dim); color: var(--accent-2); border-radius: 7px; padding: 4px 10px; }
-.chip.alt { background: var(--bg-2); color: var(--ink-2); }
-.doss-boot { font-size: 12px; color: var(--ink-2); line-height: 1.6; margin: 0; white-space: pre-wrap; }
+.rep-dot.ok { background: var(--ok); } .rep-dot.warn { background: var(--warn); } .rep-dot.fail { background: var(--fail); }
+.rep-ok { color: var(--ok); } .rep-warn { color: var(--warn); } .rep-fail { color: var(--fail); }
+.doss-rep-detail { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); font-size: var(--t-2); line-height: 1.7; color: var(--ink-2); font-family: var(--mono); word-break: break-word; }
+.doss-rep-detail .doss-l { display: inline-block; min-width: 74px; text-transform: uppercase; letter-spacing: var(--track); font-size: var(--t-1); }
+.chip { transition: transform .16s var(--ease), background .18s ease; font-size: var(--t-2); background: var(--accent-dim); color: var(--accent-2); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2); }
+.chip.alt { background: var(--s-raised); color: var(--ink-2); }
+.doss-boot { font-size: var(--t-2); color: var(--ink-2); line-height: 1.6; margin: 0; white-space: pre-wrap; }
 /* contract — one click to open, edit in place, save flows to the org file */
-.doss-contract h3 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.doss-contract h3 { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+/* Same <button> colour trap as .bk-card above: without an explicit colour this
+   inherits the user-agent buttontext black and goes invisible in dark mode.
+   NOTE: never put a backtick in this file. panel-css.ts is a template literal
+   generated from it, and scripts/sync-css.mjs refuses the whole sync if it finds
+   one, which silently leaves the build on the OLD css. */
 .contract-card {
+  color: var(--ink);
   position: relative; display: block; width: 100%; text-align: left; cursor: pointer;
-  background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px;
-  padding: 13px 14px; transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: var(--sp-3); transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 .contract-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
 .contract-card:hover .contract-hint { opacity: 1; }
 .contract-card.empty { border-style: dashed; }
 .contract-hint {
-  position: absolute; top: 9px; right: 11px; font-size: 10.5px; font-weight: 650;
-  color: var(--accent-2); opacity: 0.55; transition: opacity 0.15s; letter-spacing: 0.02em;
+  position: absolute; top: var(--sp-2); right: var(--sp-3); font-size: var(--t-1); font-weight: var(--w-strong);
+  color: var(--accent); opacity: 0.7; transition: opacity 0.15s; letter-spacing: 0.02em;
 }
-.contract-edit { display: flex; flex-direction: column; gap: 8px; }
+.contract-edit { display: flex; flex-direction: column; gap: var(--sp-2); }
 .contract-ta {
   width: 100%; min-height: 220px; resize: vertical; box-sizing: border-box;
-  background: var(--bg-1); border: 1px solid var(--accent); border-radius: 12px;
-  padding: 12px 13px; color: var(--ink); font-family: var(--mono); font-size: 12px; line-height: 1.6;
+  background: var(--s-card); border: 1px solid var(--accent); border-radius: var(--r-md);
+  padding: var(--sp-3); color: var(--ink); font-family: var(--mono); font-size: var(--t-2); line-height: 1.6;
   outline: none; box-shadow: 0 0 0 3px var(--accent-dim);
 }
-.doss-edit-hint { font-size: 11px; color: var(--ink-3); margin: 2px 0 0; font-style: italic; }
-.doss-note { color: var(--ink-3); font-size: 11px; line-height: 1.6; }
-.doss-note code { font-family: var(--mono); background: var(--bg-2); padding: 1px 5px; border-radius: 4px; }
+.doss-edit-hint { font-size: var(--t-2); color: var(--ink-3); margin: var(--sp-0) 0 0; font-style: italic; }
+.doss-note { color: var(--ink-3); font-size: var(--t-2); line-height: 1.6; }
+.doss-note code { font-family: var(--mono); background: var(--s-raised); padding: var(--sp-0) var(--sp-1); border-radius: var(--r-sm); }
 
-.pnl-fatal { min-height: 100vh; display: grid; place-items: center; color: #e07b6a; font-size: 14px; padding: 30px; text-align: center; }
+.pnl-fatal { min-height: 100vh; display: grid; place-items: center; color: var(--fail); font-size: var(--t-3); padding: var(--sp-6); text-align: center; }
 .pnl-fatal.calm { color: var(--ink-2); }
 
 @media (max-width: 760px) {
-  /* compact chrome */
-  .bar { gap: 8px 14px; padding: 9px 12px; }
-  .bar-brand { font-size: 13px; }
-  .bar-stats { gap: 11px; font-size: 11px; }
-  .bar-stats b { font-size: 12.5px; }
-  .bar-actions { gap: 6px; }
-  .btn { padding: 6px 11px; font-size: 11.5px; }
-  .tabs { padding: 0 4px; }
-  .tab { padding: 10px 9px 9px; font-size: 11.5px; }
-  .tree { padding: 12px 8px 40px; }
+  /* compact chrome. Small screens tighten the SPACING, never the type: the old
+     block shrank six sizes by a pixel each, which bought nothing and reopened
+     the flat cluster the scale exists to close. Only the brand mark steps down,
+     and it steps down a whole rung. */
+  .bar { gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-3); }
+  .bar-brand { font-size: var(--t-4); }
+  .bar-stats { gap: var(--sp-3); }
+  .bar-actions { gap: var(--sp-1); }
+  .btn { padding: var(--sp-1) var(--sp-2); }
+  .tabs { padding: 0 var(--sp-1); }
+  .tab { padding: var(--sp-2); }
+  .tree { padding: var(--sp-3) var(--sp-2) var(--sp-7); }
   .tree-hint { display: none; }
   .ag { max-width: 100%; }
   .ag-role { display: none; }
-  .screen { padding: 18px 13px 60px; }
+  .screen { padding: var(--sp-4) var(--sp-3) var(--sp-7); }
   /* the dossier becomes a BOTTOM SHEET inside the pane — the chart above stays
      tappable to switch agents; the ✕ closes. ABSOLUTE (not fixed) so it can
      never overlap an embedding host's chrome. */
   .doss {
     position: absolute; left: 0; right: 0; bottom: 0; top: 34%;
-    width: auto; z-index: 6; border-radius: 16px 16px 0 0;
+    width: auto; z-index: 6; border-radius: var(--r-lg) var(--r-lg) 0 0;
     border-top: 1px solid var(--line);
-    box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.55);
+    box-shadow: var(--sh-3);
   }
   .doss { animation: sheetup 0.25s ease both; }
   @keyframes sheetup { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   .doss-close { display: grid; }
   /* zoom control clears the sheet — top-right of the chart */
-  .zoomer { top: 4px; right: 8px; bottom: auto; }
+  .zoomer { top: var(--sp-1); right: var(--sp-2); bottom: auto; }
 }
