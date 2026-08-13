@@ -317,60 +317,103 @@ function PulseLinks({ laid, cfg, focus, introUni }: { laid: Laid; cfg: BoobooCfg
   );
 }
 
-// ── flags: luminance rank 1, the brightest thing on screen (CRAFT §1). A ringed
-// beacon that breathes, sits above its node, and ignites LAST in the entrance so
-// the eye lands on the problem rather than wandering to it. If a frame's brightest
-// pixel is not one of these (or a badge), the frame fails QA.
+// ── flags: luminance rank 1, the brightest thing on screen (CRAFT §1). A beacon
+// that breathes, sits above its node, and ignites LAST in the entrance so the eye
+// lands on the problem rather than wandering to it. If a frame's brightest pixel
+// is not one of these (or a badge), the frame fails QA.
+//
+// ── REBUILT 2026-08-12. Jesse: "the nodes lighting, the alerts lights, right now
+// they are just circles, they need true work." He was right, and the old code's
+// own comment convicted it: it promised "heat in cold water, a hard core bleeding
+// outward, no outline at all" and then drew FOUR FLAT circleGeometry DISCS at
+// radii 10/21/38/64, 24 segments, opacity .98/.30/.13/.05. Four defects, all of
+// them visible:
+//   ① NOT BILLBOARDED. circleGeometry lies in the world XY plane and nothing here
+//     copied the camera orientation, so the moment the camera moved off-axis every
+//     alarm foreshortened into an ELLIPSE. That is the single biggest reason they
+//     read as flat stickers rather than lights.
+//   ② FOUR STACKED SHELLS = concentric banding. The exact "rifle sight" the
+//     comment said it was avoiding, just with softer edges.
+//   ③ ONE FLAT COLOUR at every radius. Real emitters desaturate toward white at
+//     the core; a disc that is the same hue from centre to rim cannot read as
+//     something giving off light. This was the largest artistic miss.
+//   ④ 24-SEGMENT POLYGON. Fly close and you can count the facets.
+// The fix is one camera-facing quad per flag with the falloff in a fragment
+// shader: perfectly round at any zoom, continuous, white-hot in the middle.
+// There are only ever a handful of flags (5 in the Pemberton file), so this is
+// 5 draw calls where the old build spent 20.
+const FLAG_VERT = /* glsl */ `
+  varying vec2 vUv;
+  void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const FLAG_FRAG = /* glsl */ `
+  precision highp float;
+  uniform vec3 uColor; uniform float uPulse;
+  varying vec2 vUv;
+  void main(){
+    float d = length(vUv - 0.5) * 2.0;          // 0 at centre, 1 at the quad's inscribed edge
+    if (d > 1.0) discard;                        // the circle is defined here, so it never facets
+    float core  = exp(-d * d * 26.0);            // the hard core
+    float bleed = pow(1.0 - d, 3.2);             // one continuous falloff, no shells to band
+    float lum   = (core * 1.25 + bleed * 0.26) * uPulse;
+    // Desaturate toward white as the core gets hot. This is the whole difference
+    // between "a coloured disc" and "a thing emitting light".
+    vec3 col = mix(uColor, vec3(1.0), core * 0.70);
+    gl_FragColor = vec4(col * lum, 1.0);
+  }`;
+
+const _flagQ = new THREE.Quaternion();
+const _flagInv = new THREE.Quaternion();
+
 function Flags({ flags, onSelect, introBox, reduced }: { flags: Flagged[]; onSelect?: (id: string | null) => void; introBox: IntroBox; reduced: boolean }) {
   const grp = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
+  const mats = useMemo(
+    () => flags.map((f) => new THREE.ShaderMaterial({
+      uniforms: { uColor: { value: new THREE.Color(FLAG_COLOR[f.kind]) }, uPulse: { value: 1 } },
+      vertexShader: FLAG_VERT, fragmentShader: FLAG_FRAG,
+      transparent: true, depthTest: false, depthWrite: false, toneMapped: false,
+      blending: THREE.AdditiveBlending,
+    })),
+    [flags],
+  );
+  useEffect(() => () => { mats.forEach((m) => m.dispose()); }, [mats]);
+
+  useFrame(({ clock, camera }) => {
     const g = grp.current; if (!g) return;
     const t = introBox.current.t;
     const e = Math.min(1, Math.max(0, (t - 2.8) / 0.7)); // last beat of the entrance
     g.visible = e > 0.01;
-    // a slow pulse — alarm, not disco. Reduced-motion holds it steady and lit.
+    // A slow pulse — alarm, not disco. It now rides LUMINANCE rather than scale,
+    // because a light brightens; it does not swell. Reduced-motion holds it lit.
     const pulse = reduced ? 1 : 0.82 + 0.18 * Math.sin(clock.getElapsedTime() * 2.1);
-    const s = (1 - Math.pow(1 - e, 3)) * pulse;
-    g.children.forEach((c) => c.scale.setScalar(Math.max(0.001, s)));
+    for (const m of mats) m.uniforms.uPulse.value = pulse;
+    const s = 1 - Math.pow(1 - e, 3); // entrance only
+    // Billboard. The graph group SPINS, so copying the camera quaternion straight
+    // into a child's LOCAL quaternion would inherit that spin and tilt the alarms
+    // back off-axis, which is the bug being fixed. Cancel the parent's world
+    // rotation first. Scratch quaternions are module-level: this runs every frame.
+    g.getWorldQuaternion(_flagInv).invert();
+    for (const c of g.children) {
+      c.scale.setScalar(Math.max(0.001, s));
+      c.quaternion.copy(_flagQ.copy(_flagInv).multiply(camera.quaternion));
+    }
   });
   if (!flags.length) return null;
   return (
     <group ref={grp}>
-      {flags.map((f) => {
-        const col = FLAG_COLOR[f.kind];
-        return (
-          <group key={f.id} position={f.pos}>
-            {/* A flag is the node BURNING, not a ring drawn around it. The two
-                concentric rings this replaces read as a rifle sight — targeting
-                chrome borrowed from HUDs, which is the one visual idiom a
-                bioluminescent colony cannot survive. An alarm here is heat in
-                cold water: a hard core bleeding outward, no outline at all.
-                Warm exists in exactly two places in this scene, and this is one. */}
-            <mesh
-              onClick={(e) => { e.stopPropagation(); onSelect?.(f.id); }}
-              onPointerOver={() => { document.body.style.cursor = "pointer"; }}
-              onPointerOut={() => { document.body.style.cursor = "auto"; }}
-            >
-              <circleGeometry args={[10, 24]} />
-              <meshBasicMaterial color={col} transparent opacity={0.98} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
-            </mesh>
-            {/* the bleed: three soft shells, each wider and fainter, so the heat
-                falls off into the water instead of ending on an edge */}
-            <mesh raycast={() => null}>
-              <circleGeometry args={[21, 24]} />
-              <meshBasicMaterial color={col} transparent opacity={0.30} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
-            </mesh>
-            <mesh raycast={() => null}>
-              <circleGeometry args={[38, 24]} />
-              <meshBasicMaterial color={col} transparent opacity={0.13} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
-            </mesh>
-            <mesh raycast={() => null}>
-              <circleGeometry args={[64, 24]} />
-              <meshBasicMaterial color={col} transparent opacity={0.05} depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
-            </mesh>
-          </group>
-        );
-      })}
+      {flags.map((f, i) => (
+        <mesh
+          key={f.id}
+          position={f.pos}
+          material={mats[i]}
+          onClick={(e) => { e.stopPropagation(); onSelect?.(f.id); }}
+          onPointerOver={() => { document.body.style.cursor = "pointer"; }}
+          onPointerOut={() => { document.body.style.cursor = "auto"; }}
+        >
+          {/* 150 wide so the falloff has room to reach zero inside the quad. The
+              old outer shell stopped at r=64 and ended on an edge. */}
+          <planeGeometry args={[150, 150]} />
+        </mesh>
+      ))}
     </group>
   );
 }
