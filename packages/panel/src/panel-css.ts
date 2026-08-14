@@ -299,7 +299,9 @@ export const PANEL_CSS = String.raw`
   background: var(--s-overlay);
   flex-wrap: wrap;
 }
-.bar-brand { font-size: var(--t-5); font-family: var(--display); font-weight: var(--w-display); letter-spacing: -0.015em; line-height: 1.1; }
+/* renders as the document's <h1> (Panel.tsx), so the user-agent h1 margin and
+   2em size are cleared here rather than inherited into the bar's layout. */
+.bar-brand { margin: 0; font-size: var(--t-5); font-family: var(--display); font-weight: var(--w-display); letter-spacing: -0.015em; line-height: 1.1; }
 .bar-brand b { font-weight: var(--w-display); color: var(--accent-2); }
 /* the stats read as label-and-number pairs, so the pair is bound tight (sp-1)
    and the pairs are separated wide (sp-4) */
@@ -343,7 +345,14 @@ export const PANEL_CSS = String.raw`
 .content { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; min-height: 0; animation: rise 0.28s ease both; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-.screen { flex: 1; overflow-y: auto; padding: var(--sp-6) var(--sp-6) var(--sp-7); max-width: 900px; }
+/* THE SCREEN USES THE WINDOW IT IS GIVEN. This was max-width:900px, measured at
+   43.8% dead space in a 1600px window: a rule's bind list wrapped mid-sentence
+   while 700px sat empty beside it. A bounded MEASURE is right for prose and
+   wrong for a container, so the cap moved down onto the reading columns that
+   actually need one (.tl-sum, .rule-meta) and the grids below now take the
+   width. 1560 rather than none so an ultrawide does not stretch a card grid
+   into a single 3,000px row. */
+.screen { flex: 1; overflow-y: auto; padding: var(--sp-6) clamp(var(--sp-5), 3vw, var(--sp-7)) var(--sp-7); max-width: 1560px; }
 /* a screen head is a TITLE then a subtitle then the content. Title to subtitle
    is sp-1 because they are one thought; subtitle to content is sp-5 because
    they are not. */
@@ -352,6 +361,11 @@ export const PANEL_CSS = String.raw`
 .scr-sub { color: var(--ink-2); font-size: var(--t-2); margin: 0 0 var(--sp-5); }
 .scr-empty { color: var(--ink-3); font-size: var(--t-2); line-height: 1.65; }
 .scr-empty code, .scr-sub code { font-family: var(--mono); background: var(--s-raised); padding: var(--sp-0) var(--sp-1); border-radius: var(--r-sm); font-size: var(--t-1); }
+/* "show 100 more" — the reports list rendered 100 of 425 and offered no way to
+   reach the other 325. Inline with the count it qualifies, not a fat CTA. */
+.pnl-more { background: none; border: 0; border-bottom: 1px solid var(--accent); color: var(--accent); font: inherit; font-size: var(--t-2); cursor: pointer; padding: 0; }
+.pnl-more:hover { color: var(--accent-2); border-bottom-color: var(--accent-2); }
+.pnl-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pnl-back { background: none; border: 1px solid var(--line); color: var(--ink-2); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-3); font-size: var(--t-2); cursor: pointer; margin-bottom: var(--sp-4); }
 .pnl-back:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -424,9 +438,21 @@ export const PANEL_CSS = String.raw`
 .tl-when { font-size: var(--t-1); font-family: var(--mono); color: var(--ink-3); margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tl-label { font-size: var(--t-2); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tl-sum { margin: var(--sp-1) 0 0 32px; font-size: var(--t-2); line-height: 1.65; color: var(--ink-2); }
+/* WIDE: the row becomes a ledger rather than a stack. Who filed it holds a
+   fixed left column, the entry runs beside it at a readable measure, and the
+   width the old 900px cap threw away is spent on the thing people came to
+   read. Below 1100 it stays the stacked card, which is right when narrow. */
+@media (min-width: 1100px) {
+  .tl-body { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); column-gap: var(--sp-5); align-items: start; }
+  .tl-top { flex-wrap: wrap; }
+  .tl-when { margin-left: 0; width: 100%; }
+  .tl-sum { margin: 0; max-width: 96ch; }
+}
 
 /* rules */
-.rule-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+/* rules are independent items, so they grid. Ten full-width slabs stacked in a
+   900px column was the single worst use of a 1600px window on the board. */
+.rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: var(--sp-3); align-items: start; }
 .rule-card { background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-3); animation: settle 0.35s ease both; transition: border-color 0.15s; }
 .rule-card:hover { border-color: var(--accent); }
 .rule-top { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-1); }
@@ -434,6 +460,7 @@ export const PANEL_CSS = String.raw`
 .rule-scope { font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track); color: var(--accent); background: var(--accent-dim); border-radius: var(--r-sm); padding: var(--sp-0) var(--sp-1); font-family: var(--mono); }
 .rule-meta { font-size: var(--t-2); color: var(--ink-3); line-height: 1.6; }
 .rule-meta b { color: var(--ink-2); font-weight: var(--w-strong); }
+.rule-more { font-style: normal; font-family: var(--mono); font-size: var(--t-1); color: var(--ink-3); white-space: nowrap; }
 .rule-bar { margin-top: var(--sp-2); height: 3px; border-radius: var(--r-sm); background: var(--s-raised); overflow: hidden; }
 .rule-bar i { display: block; height: 100%; border-radius: var(--r-sm); background: var(--accent); transition: width 0.6s ease; }
 
@@ -584,21 +611,24 @@ export const PANEL_CSS = String.raw`
    Rank is NAMED, never inferred from indentation. Roman numerals + a rule
    under each, spanning the columns the cascade actually occupies. */
 /* four headers over the four real cascade columns: law · gm · departments ·
-   staff. Widths mirror .cascade so a header sits over the column it names —
-   headers labelling columns that do not exist is worse than no headers. */
+   staff. This WAS a fixed-px grid mirroring .cascade, which cannot track a
+   chart that is transform: scale()d to fit — measured at 154px of drift on the
+   default 70% fit, so the header strip was lying at rest. Positions now come
+   from the live column geometry (RankHeaders in Panel.tsx) and are written as
+   inline left/width, so the strip is a positioning context and nothing more.
+   A header whose column does not exist still renders nothing at all. */
 .ranks {
-  display: grid;
-  grid-template-columns: 232px var(--rail-w, 56px) 268px var(--rail-w, 56px) minmax(232px, 300px) var(--rail-w, 56px) 1fr;
-  margin: 0 0 var(--sp-4); padding: 0 var(--sp-4); flex: 0 0 auto;
+  position: relative; height: 20px;
+  margin: 0 0 var(--sp-4); flex: 0 0 auto;
 }
-.rank:nth-child(1) { grid-column: 1; }
-.rank:nth-child(2) { grid-column: 3; }
-.rank:nth-child(3) { grid-column: 5; }
-.rank:nth-child(4) { grid-column: 7; }
 .rank {
+  position: absolute; top: 0;
   font-family: var(--mono); font-size: var(--t-1); letter-spacing: var(--track); text-transform: uppercase;
   color: var(--ink-2); padding-bottom: var(--sp-2); border-bottom: 1px solid var(--line);
-  position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* NO transition on left/width. The position is written every frame while the
+     chart's own transform transition runs, so a CSS transition here would be a
+     second easing chasing the first and the header would trail its column. */
 }
 /* the numeral was raw --brass, which is the DARK theme's brass: 2.22:1 on warm
    paper. --accent is the same voice, resolved per theme. */
@@ -693,9 +723,32 @@ export const PANEL_CSS = String.raw`
 /* plates sit above the rail plane */
 .chart .cascade { position: relative; z-index: 1; }
 
-/* rank I — the law. Brass-edged like the GM but unfilled: it is a document,
-   not an operator. */
+/* ── FOUR RANKS, FOUR FINISHES ─────────────────────────────────────────────
+   Rank I — the law. Brass-edged like the GM but unfilled: a document, not an
+   operator.
+   Measured before this change: 62 .ag elements resolved to TWO distinct
+   shapes. Rank I, III and IV were one object at three widths, which is why
+   the board read as a wall of identical cards no matter how good the copy on
+   them was. Rank now reads through FINISH, at a glance, before a word:
+     I   law    unfilled, DASHED edge      — a document, not an object
+     II  GM     lit gradient, deepest lift — the one polished plate
+     III dept   filled card, shadow        — satin, lifts off its shelf
+     IV  staff  unfilled, hairline, flat   — inset INTO the shelf
+   Fill and dash carry it, so it survives greyscale and never rests on hue.
+
+   THE FINISH RULES BELOW ARE .ag.law-plate, NOT .law-plate. The .ag rule is
+   declared ~260 lines FURTHER DOWN this file, so at equal specificity it wins on source
+   order and a bare .law-plate background/box-shadow is silently discarded —
+   which is exactly what happened on the first pass here: the dashed unfilled
+   sheet never rendered once, and it read as correct in a probe only because
+   the plate happened to be SELECTED and .ag.sel was lending it an accent
+   border. Never put a state-dependent property in a finish signature. */
 .law-plate { width: 232px; cursor: pointer; }
+.ag.law-plate {
+  background: transparent; box-shadow: none;
+  border-style: dashed; border-color: var(--line-2);
+}
+.ag.law-plate:hover { background: var(--s-card); box-shadow: var(--sh-1); }
 .law-plate .ag-ava { font-family: var(--display); color: var(--accent); }
 .law-plate .ag-name { color: var(--accent); font-size: var(--t-3); }
 .law-plate .ag-role { word-break: break-all; }
@@ -1063,6 +1116,17 @@ export const PANEL_CSS = String.raw`
 /* staff plates: quieter, one step down, and the sans face. Rank shows in the
    type as well as in the metal. */
 .ag.staff .ag-name { font-family: var(--font); font-size: var(--t-3); font-weight: var(--w-strong); letter-spacing: -0.01em; color: var(--ink); }
+/* rank IV is INSET into the shelf, not laid on top of it: no fill, no lift,
+   the softer hairline. A department plate is a filled card that casts a
+   shadow onto the tray; its people are cut into the same tray. This is the
+   single change that stops six staff plates reading as six more departments.
+   It fills and lifts on hover, so the plate you are pointing at is still the
+   one object on the shelf that has come forward. */
+.ag.staff { background: transparent; box-shadow: none; border-color: var(--line-soft); }
+.ag.staff:hover { background: var(--s-card); box-shadow: var(--sh-2); }
+/* an unhealthy plate keeps its wash and tinted border at every rank — state
+   outranks finish, or the amber one stops being findable peripherally. */
+.ag.staff.h-warn, .ag.staff.h-fail { box-shadow: var(--sh-1); }
 
 /* the name and its role are ONE thought, so they sit sp-1 apart; the role and
    the machinery below it are not, so that gap is sp-3. */
@@ -1184,7 +1248,15 @@ export const PANEL_CSS = String.raw`
 .rep-ok { color: var(--ok); } .rep-warn { color: var(--warn); } .rep-fail { color: var(--fail); }
 .doss-rep-detail { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); font-size: var(--t-2); line-height: 1.7; color: var(--ink-2); font-family: var(--mono); word-break: break-word; }
 .doss-rep-detail .doss-l { display: inline-block; min-width: 74px; text-transform: uppercase; letter-spacing: var(--track); font-size: var(--t-1); }
-.chip { transition: transform .16s var(--ease), background .18s ease; font-size: var(--t-2); background: var(--accent-dim); color: var(--accent-2); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2); }
+/* A CLICKABLE CHIP RENDERS AS A <button> (Panel.tsx). A button takes the
+   user-agent border, font and buttontext colour — the same trap that shipped
+   the black-on-black .bk-card documented above — so all three are declared
+   here rather than inherited. Colour is already explicit on .chip/.chip.alt. */
+.chip { transition: transform .16s var(--ease), background .18s ease; font-size: var(--t-2); background: var(--accent-dim); color: var(--accent-2); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2);
+  border: 0; font-family: inherit; line-height: inherit; text-align: left; }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* the one-of-many state, so the chosen filter is not carried by tone alone */
+.chip[aria-checked="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
 .chip.alt { background: var(--s-raised); color: var(--ink-2); }
 .doss-boot { font-size: var(--t-2); color: var(--ink-2); line-height: 1.6; margin: 0; white-space: pre-wrap; }
 /* contract — one click to open, edit in place, save flows to the org file */
@@ -1238,19 +1310,35 @@ export const PANEL_CSS = String.raw`
   .ag { max-width: 100%; }
   .ag-role { display: none; }
   .screen { padding: var(--sp-4) var(--sp-3) var(--sp-7); }
-  /* the dossier becomes a BOTTOM SHEET inside the pane — the chart above stays
-     tappable to switch agents; the ✕ closes. ABSOLUTE (not fixed) so it can
-     never overlap an embedding host's chrome. */
+}
+
+/* ── THE DOSSIER STOPS BEING A SIDE PANEL BEFORE THE CHART RUNS OUT OF ROOM ──
+   This sheet reflow already existed, but only below 760px, which left 820 to
+   1080 as a dead band where nothing adapted at all. Measured at 900px before
+   the change: the dossier held its full 340px (37.8% of the window), the tree
+   got 560px, the auto-fit hit its 0.45 floor, and the cascade clipped
+   mid-column — rank IV cut in half and the law plate hanging off the left
+   edge — inside a .tree that is overflow:hidden.
+   340px of panel needs roughly 740px of chart beside it to stay honest. Below
+   that the chart wins the width and the dossier goes over it as a sheet, which
+   is the same behaviour, moved to where it was actually needed.
+   Only the dossier moves here: the compact-chrome block above stays at 760,
+   because hiding role lines and shrinking the brand on a 1000px laptop window
+   would be fixing the wrong thing. */
+@media (max-width: 1080px) {
+  /* the chart above stays tappable to switch agents; the ✕ closes. ABSOLUTE
+     (not fixed) so it can never overlap an embedding host's chrome. */
   .doss {
     position: absolute; left: 0; right: 0; bottom: 0; top: 34%;
     width: auto; z-index: 6; border-radius: var(--r-lg) var(--r-lg) 0 0;
     border-top: 1px solid var(--line);
     box-shadow: var(--sh-3);
+    animation: sheetup 0.25s ease both;
   }
-  .doss { animation: sheetup 0.25s ease both; }
   @keyframes sheetup { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   .doss-close { display: grid; }
   /* zoom control clears the sheet — top-right of the chart */
   .zoomer { top: var(--sp-1); right: var(--sp-2); bottom: auto; }
 }
+@media (prefers-reduced-motion: reduce) { .doss { animation: none; } }
 `;

@@ -427,6 +427,103 @@ function CascadeRails({ chartRef, version }: { chartRef: React.RefObject<HTMLDiv
   );
 }
 
+/** ── RANK HEADERS, MEASURED ────────────────────────────────────────────────
+ *  These were a fixed-px CSS grid (232px / rail / 268px / rail / 232-300 / 1fr)
+ *  sitting above a chart that is transform: scale()d to fit. The two can never
+ *  agree, and they did not: measured on the live board at its DEFAULT 70% fit,
+ *  "III Departments" sat 154px to the right of the department column and "IV
+ *  Staff & machines" 139px right of staff — so the board's one explicit claim
+ *  about rank was already wrong before anyone touched the zoom control.
+ *
+ *  Rank is the whole grammar of this chart (name the rank, never make the
+ *  reader infer it from indentation), so a header over the wrong column is not
+ *  cosmetic. They are now positioned from the SAME data-rail anchors
+ *  CascadeRails measures to draw the elbows, in viewport space via
+ *  getBoundingClientRect — which bakes the transform in, which is exactly what
+ *  is wanted here and exactly what boxIn must NOT do for the rails.
+ *
+ *  A header whose column does not exist renders nothing, per the standing note
+ *  on .ranks: labelling a column that is not there is worse than no header. */
+const RANKS = [
+  { sel: 'law', numeral: "I", label: "The standard" },
+  { sel: 'gm', numeral: "II", label: "The executive" },
+  { sel: 'dept', numeral: "III", label: "Departments" },
+  { sel: 'staff', numeral: "IV", label: "Staff & machines" },
+] as const;
+
+function RankHeaders({ chartRef, fitRef, version, scale }: {
+  chartRef: React.RefObject<HTMLDivElement | null>;
+  fitRef: React.RefObject<HTMLDivElement | null>;
+  version: string;
+  scale: number;
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const [cols, setCols] = useState<({ x: number; w: number } | null)[]>([null, null, null, null]);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const bar = barRef.current, root = chartRef.current;
+      if (!bar || !root) return;
+      const b = bar.getBoundingClientRect();
+      const next = RANKS.map(({ sel }) => {
+        const els = Array.from(root.querySelectorAll<HTMLElement>(`[data-rail="${sel}"]`));
+        if (!els.length) return null;
+        let l = Infinity, r = -Infinity;
+        for (const el of els) {
+          const q = el.getBoundingClientRect();
+          if (q.width === 0) continue;
+          l = Math.min(l, q.left);
+          r = Math.max(r, q.right);
+        }
+        if (!Number.isFinite(l)) return null;
+        // clamp into the strip so a panned-off column keeps a visible header
+        const x = Math.max(0, Math.round(l - b.left));
+        return { x, w: Math.max(0, Math.round(Math.min(r - b.left, b.width) - x)) };
+      });
+      setCols((prev) =>
+        prev.every((p, i) => p?.x === next[i]?.x && p?.w === next[i]?.w) ? prev : next,
+      );
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (chartRef.current) ro.observe(chartRef.current);
+    if (barRef.current) ro.observe(barRef.current);
+    const vp = fitRef.current;
+    vp?.addEventListener("scroll", measure, { passive: true });
+    // .chart carries a 350ms transform transition and a transform does not
+    // resize the layout box, so neither this effect firing on `scale` nor the
+    // ResizeObserver sees the geometry the chart is MOVING TO — a single
+    // measurement here reads the previous frame and freezes on it. The first
+    // version of this fix did exactly that: 1px of drift at the default fit
+    // and 616px one zoom click later, which is the same defect it replaced.
+    // Follow the transition frame by frame instead, bounded so it cannot spin.
+    let raf = 0;
+    const until = performance.now() + 600;
+    const follow = () => {
+      measure();
+      raf = performance.now() < until ? requestAnimationFrame(follow) : 0;
+    };
+    raf = requestAnimationFrame(follow);
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      vp?.removeEventListener("scroll", measure);
+    };
+  }, [chartRef, fitRef, version, scale]);
+  return (
+    <div className="ranks" ref={barRef}>
+      {RANKS.map((r, i) => {
+        const c = cols[i];
+        if (!c || c.w < 24) return null;
+        return (
+          <div className="rank" key={r.sel} style={{ left: c.x, width: c.w }}>
+            <b>{r.numeral}</b>{r.label}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** A department lane that is ITSELF a drop target.
  *  Cards were the only thing accepting a drop, so releasing over the empty
  *  space inside a lane did nothing at all and read as "it will not let me move
@@ -491,12 +588,22 @@ function AgentFacts({ a, org, health, showLaw }: { a: BOrgAgent; org: BOrg; heal
   const consequence = useMemo(() => consequenceOf(a, org, slice), [a, org, slice]);
   const pulse = pulseFor(a, health);
   const light = lightFor(a, health);
+  // ABSENCE IS QUIET. "No reports yet" rendered 51 times on the org screen,
+  // twelve of them visible at once, set in the fact row's heavier ink — and
+  // the "wall of empty states" everyone complains about is only a wall
+  // BECAUSE fifty-one identical cards make it one. A plate with no health, no
+  // report and no declared beat has nothing to put in this row, so the row and
+  // its dividing rule are not drawn at all. Absence stays perfectly legible —
+  // no lamp, no facts, a shorter card — and the dossier still tells the whole
+  // story on click. Saying nothing is the honest way to render nothing.
+  const silent = light === "none" && !pulse?.lastAt && typeof a.cadence !== "number";
   if (!slice) return null;
   return (
     <>
       {/* what this node does to the system, in plain English. Empty on leaves —
           see consequenceOf: a line identical across 52 cards is not a fact. */}
       {consequence && <span className="ag-flows" title="what flows out of this node — the org file is the source booboo_boot reads">{consequence}</span>}
+      {!silent && (
       <span className="ag-facts">
         <em className={`ag-fact ag-fact-health ${light}`}>{HEALTH_WORD[light]}</em>
         {/* "reported 4d ago" alone is an oracle: the lamp knows whether that is
@@ -512,6 +619,7 @@ function AgentFacts({ a, org, health, showLaw }: { a: BOrgAgent; org: BOrg; heal
           )}
         </em>
       </span>
+      )}
       {/* the law, made visible: the boot-order chain that binds this card —
           House Standard → SOP → role — only drawn while the toggle is on. */}
       {showLaw && (
@@ -820,11 +928,24 @@ function BrandMark({ agent }: { agent: BOrgAgent }) {
   );
 }
 
-function Chip({ children, tone, onClick }: { children: React.ReactNode; tone?: string; onClick?: () => void }) {
+// A CLICKABLE CHIP IS A BUTTON. Every one of these was a <span> with an
+// onClick: no tab stop, no Enter or Space, no role, invisible to a screen
+// reader — and on the reports tab they ARE the filter, which made that tab's
+// primary control unreachable without a mouse. Decorative chips (no onClick)
+// stay a <span>, because a button with nothing to do is worse than no button.
+// `checked` drives aria-checked so a radiogroup announces which one is on.
+function Chip({ children, tone, onClick, checked }: { children: React.ReactNode; tone?: string; onClick?: () => void; checked?: boolean }) {
+  const cls = `chip${tone ? ` ${tone}` : ""}${onClick ? " tap" : ""}`;
+  if (!onClick) return <span className={cls}>{children}</span>;
   return (
-    <span className={`chip${tone ? ` ${tone}` : ""}${onClick ? " tap" : ""}`} onClick={onClick}>
+    <button
+      type="button"
+      className={cls}
+      onClick={onClick}
+      {...(checked === undefined ? {} : { role: "radio", "aria-checked": checked })}
+    >
       {children}
-    </span>
+    </button>
   );
 }
 
@@ -1287,13 +1408,9 @@ function OrgScreen({
             : "drag a plate — or a machine — onto its new parent · click for its dossier · machine racks show live health"}
         </p>
         {/* rank grammar, borrowed from the ministry organigram: name the rank,
-            never make the reader infer it from indentation. */}
-        <div className="ranks">
-          <div className="rank"><b>I</b>The standard</div>
-          <div className="rank"><b>II</b>The executive</div>
-          <div className="rank"><b>III</b>Departments</div>
-          <div className="rank"><b>IV</b>Staff &amp; machines</div>
-        </div>
+            never make the reader infer it from indentation. Positions are
+            measured off the real columns — see RankHeaders. */}
+        <RankHeaders chartRef={chartRef} fitRef={fitRef} version={railVersion} scale={eff} />
         <div className={`chart-fit${zoom !== null ? " zoomed" : ""}`} ref={fitRef}>
           {/* spacer sized to the SCALED footprint so the scroll extent matches
               what you can actually see (transform doesn't resize the layout box) */}
@@ -1370,15 +1487,24 @@ function OrgScreen({
 
 /* ────────────────────────── BUCKETS ────────────────────────── */
 
+// A FAILED READ IS NOT AN ANSWER OF ZERO. Every fetch on this board used to
+// .catch() into an empty result, so an API outage rendered as a confident
+// "286 memories" turning into "0" and "no reports filed yet" — the board's
+// most-trusted numbers, quietly wrong, with nothing on screen to say so.
+// "err" is a third state alongside loading and loaded, and it prints a dash.
+type Loaded<T> = T | "err" | null;
+
 function BucketCount({ bucket }: { bucket: string }) {
   const api = useApi();
-  const [n, setN] = useState<number | null>(null);
+  const [n, setN] = useState<Loaded<number>>(null);
   useEffect(() => {
     api(`/nodes?type=memory&cluster=${encodeURIComponent(bucket)}&limit=1`)
       .then((j) => setN(j.total))
-      .catch(() => setN(0));
+      .catch(() => setN("err"));
   }, [bucket, api]);
-  const v = useCountUp(n ?? 0);
+  const v = useCountUp(typeof n === "number" ? n : 0);
+  if (n === "err")
+    return <div className="bk-n dim" title="could not reach the API for this bucket — this is not a count of zero">—</div>;
   return <div className="bk-n">{n === null ? "…" : v.toLocaleString()}</div>;
 }
 
@@ -1413,7 +1539,7 @@ function BucketsScreen({ org, param, hasSnapshot }: { org: BOrg; param: string |
     );
   }, [org, discovered]);
 
-  const [items, setItems] = useState<BNode[] | null>(null);
+  const [items, setItems] = useState<Loaded<BNode[]>>(null);
   useEffect(() => {
     setItems(null);
     if (!param || !hasSnapshot) return;
@@ -1421,7 +1547,7 @@ function BucketsScreen({ org, param, hasSnapshot }: { org: BOrg; param: string |
       .then((j: { nodes: BNode[] }) => {
         setItems([...j.nodes].sort((a, b) => nodeAt(b).localeCompare(nodeAt(a))));
       })
-      .catch(() => setItems([]));
+      .catch(() => setItems("err"));
   }, [param, hasSnapshot, api]);
 
   if (param) {
@@ -1435,6 +1561,8 @@ function BucketsScreen({ org, param, hasSnapshot }: { org: BOrg; param: string |
           <p className="scr-empty">start with <code>--snapshot</code> to browse this bucket's memories.</p>
         ) : items === null ? (
           <p className="scr-empty">loading…</p>
+        ) : items === "err" ? (
+          <p className="scr-empty">couldn't reach the API for this bucket, so what is inside it is <b>unknown</b> — this is not the same as empty. Check <code>booboo panel</code> is still running, then reload.</p>
         ) : items.length === 0 ? (
           <p className="scr-empty">this bucket is empty — nothing remembered here yet.</p>
         ) : (
@@ -1500,19 +1628,24 @@ function BucketsScreen({ org, param, hasSnapshot }: { org: BOrg; param: string |
 
 function ReportsScreen({ org, hasSnapshot }: { org: BOrg; hasSnapshot: boolean }) {
   const api = useApi();
-  const [rows, setRows] = useState<BNode[] | null>(null);
+  const [rows, setRows] = useState<Loaded<BNode[]>>(null);
   const [who, setWho] = useState<string>("");
+  // 425 reports were fetched and 100 rendered, so 325 of them were unreachable
+  // by any means the UI offered. The page grows on demand instead.
+  const PAGE = 100;
+  const [cap, setCap] = useState(PAGE);
   const nameOf = useMemo(() => new Map(org.agents.map((a) => [a.id, a])), [org]);
 
   useEffect(() => {
     if (!hasSnapshot) return;
     fetchReports(api, null, 1000)
       .then(({ nodes }) => setRows(nodes))
-      .catch(() => setRows([]));
+      .catch(() => setRows("err"));
   }, [hasSnapshot, api]);
 
-  const agents = useMemo(() => [...new Set((rows ?? []).map(reportAgentId))].filter(Boolean), [rows]);
-  const shown = (rows ?? []).filter((r) => !who || reportAgentId(r) === who);
+  const list = Array.isArray(rows) ? rows : [];
+  const agents = useMemo(() => [...new Set(list.map(reportAgentId))].filter(Boolean), [rows]);
+  const shown = list.filter((r) => !who || reportAgentId(r) === who);
   const total = useCountUp(shown.length);
 
   if (!hasSnapshot)
@@ -1523,10 +1656,13 @@ function ReportsScreen({ org, hasSnapshot }: { org: BOrg; hasSnapshot: boolean }
       <h2 className="scr-title">reports <span className="scr-count">{total}</span></h2>
       <p className="scr-sub">what the fleet has been closing, newest first.</p>
       {agents.length > 1 && (
-        <div className="rep-filter">
-          <Chip tone={who === "" ? "" : "alt"} onClick={() => setWho("")}>everyone</Chip>
+        /* the filter is this tab's primary control and it was a row of <span>s:
+           six focusable elements on the whole screen, none of them these. A
+           group of one-of-many filters is a radiogroup, so it says so. */
+        <div className="rep-filter" role="radiogroup" aria-label="filter reports by who filed them">
+          <Chip tone={who === "" ? "" : "alt"} checked={who === ""} onClick={() => { setWho(""); setCap(PAGE); }}>everyone</Chip>
           {agents.map((a) => (
-            <Chip key={a} tone={who === a ? "" : "alt"} onClick={() => setWho(who === a ? "" : a)}>
+            <Chip key={a} tone={who === a ? "" : "alt"} checked={who === a} onClick={() => { setWho(who === a ? "" : a); setCap(PAGE); }}>
               {nameOf.get(a)?.emoji ?? ""} {nameOf.get(a)?.name ?? a}
             </Chip>
           ))}
@@ -1534,11 +1670,13 @@ function ReportsScreen({ org, hasSnapshot }: { org: BOrg; hasSnapshot: boolean }
       )}
       {rows === null ? (
         <p className="scr-empty">loading…</p>
+      ) : rows === "err" ? (
+        <p className="scr-empty">couldn't reach the API, so whether anything has been filed is <b>unknown</b> — this is not the same as no reports. Check <code>booboo panel</code> is still running, then reload.</p>
       ) : shown.length === 0 ? (
         <p className="scr-empty">no reports filed yet — they land here as agents close work (node type <code>report</code>).</p>
       ) : (
         <div className="timeline">
-          {shown.slice(0, 100).map((r) => {
+          {shown.slice(0, cap).map((r) => {
             const filer = reportAgentId(r);
             const a = filer ? nameOf.get(filer) : undefined;
             const when = relTime(nodeAt(r));
@@ -1557,7 +1695,14 @@ function ReportsScreen({ org, hasSnapshot }: { org: BOrg; hasSnapshot: boolean }
               </div>
             );
           })}
-          {shown.length > 100 && <p className="scr-empty">showing the latest 100 of {shown.length}.</p>}
+          {shown.length > cap && (
+            <p className="scr-empty">
+              showing the latest {cap} of {shown.length}.{" "}
+              <button type="button" className="pnl-more" onClick={() => setCap((c) => c + PAGE)}>
+                show {Math.min(PAGE, shown.length - cap)} more
+              </button>
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -1610,9 +1755,20 @@ function RulesScreen({ org }: { org: BOrg }) {
                 <span className="rule-ref">{r.rule}</span>
                 {r.global && <span className="rule-scope">global — binds everyone</span>}
               </div>
+              {/* THE COUNT IS THE FACT; THE NAMES ARE THE FOOTNOTE. The House
+                  Standard binds 75 agents and this printed all 75 as prose —
+                  eight wrapped lines that turned the card into a paragraph in
+                  a box and made every rule card the same grey slab. Six names
+                  set the scale, the count carries the weight, and the full
+                  list is one hover away. */}
               <div className="rule-meta">
                 <span>declared by <b>{r.declaredBy.join(", ")}</b></span>
-                {r.inheritedBy.length > 0 && <span> · binds <b>{r.inheritedBy.length}</b> below: {r.inheritedBy.join(", ")}</span>}
+                {r.inheritedBy.length > 0 && (
+                  <span title={`binds: ${r.inheritedBy.join(", ")}`}>
+                    {" "}· binds <b>{r.inheritedBy.length}</b> below: {r.inheritedBy.slice(0, 6).join(", ")}
+                    {r.inheritedBy.length > 6 && <i className="rule-more"> +{r.inheritedBy.length - 6} more</i>}
+                  </span>
+                )}
               </div>
               <div className="rule-bar">
                 <i style={{ width: `${Math.round((r.inheritedBy.length / maxBind) * 100)}%` }} />
@@ -1814,7 +1970,9 @@ function App({ theme: pinnedTheme }: { theme?: "dark" | "light" }) {
       <div className="pnl-aurora" aria-hidden />
       <Constellation />
       <header className="bar">
-        <div className="bar-brand">🐾 <b>{draft.title || "the organigram"}</b></div>
+        {/* the board had NO h1 at all — every screen opened at h2 — so the one
+            thing that names the document was a div. It is the house's name. */}
+        <h1 className="bar-brand">🐾 <b>{draft.title || "the organigram"}</b></h1>
         <div className="bar-stats">
           <span><b>{agentCount}</b> agents</span>
           {stats && <span><b>{nodeCount.toLocaleString()}</b> nodes</span>}
@@ -1847,10 +2005,19 @@ function App({ theme: pinnedTheme }: { theme?: "dark" | "light" }) {
         </div>
       </header>
 
-      <nav className="tabs">
+      {/* Deliberately NOT role="tablist": these change the hash route, and a
+          tablist promises tabpanels wired by aria-controls that do not exist
+          here. Navigation that announces which one you are on is the honest
+          shape, so <nav> keeps its name and the current tab says so. */}
+      <nav className="tabs" aria-label="board sections">
         {TABS.map((t) => (
-          <button key={t.id} className={`tab${tab === t.id ? " on" : ""}`} onClick={() => nav(`/${t.id === "org" ? "" : t.id}`)}>
-            <span className="tab-glyph">{t.glyph}</span> {t.label}
+          <button
+            key={t.id}
+            className={`tab${tab === t.id ? " on" : ""}`}
+            aria-current={tab === t.id ? "page" : undefined}
+            onClick={() => nav(`/${t.id === "org" ? "" : t.id}`)}
+          >
+            <span className="tab-glyph" aria-hidden="true">{t.glyph}</span> {t.label}
           </button>
         ))}
       </nav>
