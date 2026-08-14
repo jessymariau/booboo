@@ -1,5 +1,12 @@
 # @booboo-brain/cli
 
+## 0.5.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @booboo-brain/panel@0.5.8
+
 ## 0.5.6
 
 ### Patch Changes

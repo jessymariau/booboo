@@ -1,5 +1,36 @@
 # @booboo-brain/panel
 
+## 0.5.8
+
+### Patch Changes
+
+- Give the four ranks four finishes, and let the board use the window it is given.
+
+  Measured on the live board at 1600×1000 before the change: 43.8% of the window
+  unused on reports/rules/buckets (`max-width: 900px`), "No reports yet" rendered
+  51 times on one screen, 62 plates sharing two distinct finishes, the rank
+  column headers 154px off the columns they name at the DEFAULT zoom, and the
+  reports filter unreachable by keyboard.
+
+  - Rank reads through finish before a word: the law unfilled + dashed, the GM a
+    lit gradient, a department a filled card lifting off its shelf, staff
+    unfilled and flat, inset into it. Survives greyscale; never rests on hue.
+  - Absence is quiet: a plate with no health, no report and no declared beat
+    draws no fact row at all.
+  - The rank headers are measured off the same `data-rail` anchors the elbows
+    use, followed frame-by-frame through the chart's transform transition —
+    drift is now 0–1px at every zoom.
+  - A failed fetch is no longer an answer of zero: loaded, loading and failed
+    are three states, and failed prints a dash and says what it does not know.
+  - Clickable chips are `<button>`s (the reports filter was `<span>`s — no tab
+    stop, no Enter, invisible to a screen reader), the reports list can reach
+    past its first 100 entries, the rules list grids instead of stacking, and
+    the dossier reflows to a bottom sheet at 1080px rather than 760.
+
+  Verified in both themes with a contrast probe that samples every text-bearing
+  element at any size and was poisoned first to prove it can fail: zero
+  failures, zero console errors, no horizontal overflow at 1600/1000/900.
+
 ## 0.5.7
 
 ### Patch Changes
