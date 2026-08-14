@@ -495,7 +495,12 @@ function RankHeaders({ chartRef, fitRef, version, scale }: {
     // measurement here reads the previous frame and freezes on it. The first
     // version of this fix did exactly that: 1px of drift at the default fit
     // and 616px one zoom click later, which is the same defect it replaced.
-    // Follow the transition frame by frame instead, bounded so it cannot spin.
+    // Follow the transition frame by frame, bounded so it cannot spin — and
+    // ALSO settle on transitionend, because the 600ms budget is wall-clock: a
+    // main-thread stall (first paint of a big org) can exhaust it before the
+    // transition finishes, which would freeze the headers mid-flight with
+    // nothing left to re-trigger them. Under reduced motion the transition is
+    // none, the first measure lands on final geometry, and both paths no-op.
     let raf = 0;
     const until = performance.now() + 600;
     const follow = () => {
@@ -503,9 +508,13 @@ function RankHeaders({ chartRef, fitRef, version, scale }: {
       raf = performance.now() < until ? requestAnimationFrame(follow) : 0;
     };
     raf = requestAnimationFrame(follow);
+    const chartEl = chartRef.current;
+    const onEnd = (e: TransitionEvent) => { if (e.propertyName === "transform") measure(); };
+    chartEl?.addEventListener("transitionend", onEnd);
     return () => {
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
+      chartEl?.removeEventListener("transitionend", onEnd);
       vp?.removeEventListener("scroll", measure);
     };
   }, [chartRef, fitRef, version, scale]);
@@ -596,7 +605,10 @@ function AgentFacts({ a, org, health, showLaw }: { a: BOrgAgent; org: BOrg; heal
   // its dividing rule are not drawn at all. Absence stays perfectly legible —
   // no lamp, no facts, a shorter card — and the dossier still tells the whole
   // story on click. Saying nothing is the honest way to render nothing.
-  const silent = light === "none" && !pulse?.lastAt && typeof a.cadence !== "number";
+  // The !pulse?.n clause: a plate whose only heartbeats are UNDATED failures
+  // has light "none" (no dated verdict) but real history — hiding its row
+  // would upgrade "wrong row" to "no row". Any recorded pulse keeps the row.
+  const silent = light === "none" && !pulse?.lastAt && !(pulse && pulse.n > 0) && typeof a.cadence !== "number";
   if (!slice) return null;
   return (
     <>
@@ -933,8 +945,11 @@ function BrandMark({ agent }: { agent: BOrgAgent }) {
 // reader — and on the reports tab they ARE the filter, which made that tab's
 // primary control unreachable without a mouse. Decorative chips (no onClick)
 // stay a <span>, because a button with nothing to do is worse than no button.
-// `checked` drives aria-checked so a radiogroup announces which one is on.
-function Chip({ children, tone, onClick, checked }: { children: React.ReactNode; tone?: string; onClick?: () => void; checked?: boolean }) {
+// `pressed` drives aria-pressed: these are TOGGLE buttons, not radios — the
+// first version claimed role="radio" inside a radiogroup, which was half a
+// pattern (radios promise arrow-key movement and never toggle OFF; these
+// chips do exactly both). aria-pressed tells the truth about the behaviour.
+function Chip({ children, tone, onClick, pressed }: { children: React.ReactNode; tone?: string; onClick?: () => void; pressed?: boolean }) {
   const cls = `chip${tone ? ` ${tone}` : ""}${onClick ? " tap" : ""}`;
   if (!onClick) return <span className={cls}>{children}</span>;
   return (
@@ -942,7 +957,7 @@ function Chip({ children, tone, onClick, checked }: { children: React.ReactNode;
       type="button"
       className={cls}
       onClick={onClick}
-      {...(checked === undefined ? {} : { role: "radio", "aria-checked": checked })}
+      {...(pressed === undefined ? {} : { "aria-pressed": pressed })}
     >
       {children}
     </button>
@@ -981,8 +996,8 @@ function Dossier({
     walk(id);
     return out;
   }, [org, id]);
-  const [memCount, setMemCount] = useState<number | null>(null);
-  const [repCount, setRepCount] = useState<number | null>(null);
+  const [memCount, setMemCount] = useState<Loaded<number>>(null);
+  const [repCount, setRepCount] = useState<Loaded<number>>(null);
   const [reports, setReports] = useState<BNode[] | null>(null);
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -997,11 +1012,15 @@ function Dossier({
     setRepCount(null);
     setReports(null);
     if (!hasSnapshot || !slice) return;
+    // A failed read is not an answer of zero (Loaded<T>, same law as the
+    // screens): these were the literal "confident 0 in the dossier" — a dead
+    // API rendered "0 MEMORIES IN REACH · 0 REPORTS FILED" on every agent.
     Promise.all(
       slice.buckets.map((b) =>
-        api(`/nodes?type=memory&cluster=${encodeURIComponent(b)}&limit=1`).then((j) => j.total as number).catch(() => 0),
+        api(`/nodes?type=memory&cluster=${encodeURIComponent(b)}&limit=1`).then((j) => j.total as number),
       ),
-    ).then((counts) => setMemCount(counts.reduce((s, n) => s + n, 0)));
+    ).then((counts) => setMemCount(counts.reduce((s, n) => s + n, 0)))
+      .catch(() => setMemCount("err"));
     // Fetch by cluster first (cheap, server-side). House-level filers like the
     // Executive carry cluster null, so that query returns nothing and the
     // dossier claimed "0 reports filed" while holding three years of them —
@@ -1013,11 +1032,11 @@ function Dossier({
         setRepCount(mine.length);
         setReports(mine.slice(0, 4));
       });
-    }).catch(() => { setRepCount(0); setReports([]); });
+    }).catch(() => { setRepCount("err"); setReports([]); });
   }, [id, hasSnapshot, slice, api]);
 
-  const mem = useCountUp(memCount ?? 0);
-  const rep = useCountUp(repCount ?? 0);
+  const mem = useCountUp(typeof memCount === "number" ? memCount : 0);
+  const rep = useCountUp(typeof repCount === "number" ? repCount : 0);
 
   const startEdit = () => {
     if (!slice) return;
@@ -1126,11 +1145,11 @@ function Dossier({
       {hasSnapshot && (
         <div className="doss-stats">
           <div className="doss-stat">
-            <div className="doss-n">{memCount === null ? "…" : mem.toLocaleString()}</div>
+            <div className="doss-n">{memCount === null ? "…" : memCount === "err" ? <span title="could not reach the API — this is not a count of zero">—</span> : mem.toLocaleString()}</div>
             <div className="doss-l">memories in reach</div>
           </div>
           <div className="doss-stat">
-            <div className="doss-n">{repCount === null ? "…" : rep.toLocaleString()}</div>
+            <div className="doss-n">{repCount === null ? "…" : repCount === "err" ? <span title="could not reach the API — this is not a count of zero">—</span> : rep.toLocaleString()}</div>
             <div className="doss-l">reports filed</div>
           </div>
           <div className="doss-stat">
@@ -1303,10 +1322,18 @@ function OrgScreen({
 }) {
   const api = useApi();
   // The heartbeat: one fetch of every report powers all the lights.
+  // A swallowed failure here was the worst lie on the board: health stayed
+  // null, every plate went light "none", and — with the silent-absence gate —
+  // an API outage rendered as a PERFECTLY CLEAN org, indistinguishable from a
+  // healthy fresh install. Quiet absence is only honest when the read
+  // succeeded, so a failed read says so on the board itself.
   const [health, setHealth] = useState<HealthMap | null>(null);
+  const [healthErr, setHealthErr] = useState(false);
   useEffect(() => {
     if (!hasSnapshot) return;
-    fetchReports(api, null, 10000).then(({ nodes }) => setHealth(buildHealthMap(nodes))).catch(() => {});
+    fetchReports(api, null, 10000)
+      .then(({ nodes }) => { setHealth(buildHealthMap(nodes)); setHealthErr(false); })
+      .catch(() => setHealthErr(true));
   }, [hasSnapshot, api]);
 
   // The ledger shelf: hovering a role's card lights the buckets it can reach.
@@ -1407,6 +1434,12 @@ function OrgScreen({
             ? "the rails now trace authority — brass flows from the House Standard through every SOP to every role"
             : "drag a plate — or a machine — onto its new parent · click for its dossier · machine racks show live health"}
         </p>
+        {healthErr && (
+          <p className="tree-warn" role="status">
+            health is <b>unknown</b> — the reports API could not be reached, so the lamps and fact
+            rows are hidden, not healthy. Check <code>booboo panel</code> is running, then reload.
+          </p>
+        )}
         {/* rank grammar, borrowed from the ministry organigram: name the rank,
             never make the reader infer it from indentation. Positions are
             measured off the real columns — see RankHeaders. */}
@@ -1487,11 +1520,17 @@ function OrgScreen({
 
 /* ────────────────────────── BUCKETS ────────────────────────── */
 
-// A FAILED READ IS NOT AN ANSWER OF ZERO. Every fetch on this board used to
-// .catch() into an empty result, so an API outage rendered as a confident
-// "286 memories" turning into "0" and "no reports filed yet" — the board's
-// most-trusted numbers, quietly wrong, with nothing on screen to say so.
-// "err" is a third state alongside loading and loaded, and it prints a dash.
+// A FAILED READ IS NOT AN ANSWER OF ZERO. The fetches behind the board's
+// headline numbers used to .catch() into an empty result, so an API outage
+// rendered as a confident "286 memories" turning into "0" and "no reports
+// filed yet" — the most-trusted numbers, quietly wrong, with nothing on
+// screen to say so. "err" is a third state alongside loading and loaded, and
+// it prints a dash. Converted: bucket counts, bucket contents, the reports
+// list, the dossier's two stats, and the health map (which says so on the
+// board). Deliberately NOT converted: /api/stats and /api/totals in App —
+// their failure currently renders the "start with --snapshot" empty states,
+// which is the same class of lie but is wired through hasSnapshot everywhere;
+// that is its own change, not a rider on this one.
 type Loaded<T> = T | "err" | null;
 
 function BucketCount({ bucket }: { bucket: string }) {
@@ -1653,16 +1692,20 @@ function ReportsScreen({ org, hasSnapshot }: { org: BOrg; hasSnapshot: boolean }
 
   return (
     <div className="screen">
-      <h2 className="scr-title">reports <span className="scr-count">{total}</span></h2>
+      {/* on a failed read the count prints the same dash as every other failed
+          number — a confident 0 above a body saying "unknown" is half a fix */}
+      <h2 className="scr-title">reports <span className="scr-count">{rows === "err" ? "—" : total}</span></h2>
       <p className="scr-sub">what the fleet has been closing, newest first.</p>
       {agents.length > 1 && (
         /* the filter is this tab's primary control and it was a row of <span>s:
-           six focusable elements on the whole screen, none of them these. A
-           group of one-of-many filters is a radiogroup, so it says so. */
-        <div className="rep-filter" role="radiogroup" aria-label="filter reports by who filed them">
-          <Chip tone={who === "" ? "" : "alt"} checked={who === ""} onClick={() => { setWho(""); setCap(PAGE); }}>everyone</Chip>
+           six focusable elements on the whole screen, none of them these.
+           Toggle buttons in a labelled group — not a radiogroup, because a
+           chip can be toggled OFF and there is no arrow-key roving, and
+           claiming radio semantics without either is worse than none. */
+        <div className="rep-filter" role="group" aria-label="filter reports by who filed them">
+          <Chip tone={who === "" ? "" : "alt"} pressed={who === ""} onClick={() => { setWho(""); setCap(PAGE); }}>everyone</Chip>
           {agents.map((a) => (
-            <Chip key={a} tone={who === a ? "" : "alt"} checked={who === a} onClick={() => { setWho(who === a ? "" : a); setCap(PAGE); }}>
+            <Chip key={a} tone={who === a ? "" : "alt"} pressed={who === a} onClick={() => { setWho(who === a ? "" : a); setCap(PAGE); }}>
               {nameOf.get(a)?.emoji ?? ""} {nameOf.get(a)?.name ?? a}
             </Chip>
           ))}
@@ -1730,6 +1773,19 @@ function RulesScreen({ org }: { org: BOrg }) {
       }
     }
     const name = (id: string) => org.agents.find((a) => a.id === id)?.name ?? id;
+    // The bar's denominator is the DECLARER'S OWN REACH, not the whole house.
+    // Scaled against all 76 agents, every departmental SOP (binding 5-9 of its
+    // own people) rendered a ~5% sliver on a full track — nine "stalled
+    // loading bars" that made honest data look like an error state. A rule is
+    // full when it binds everyone below its declarer, which is what a bound
+    // department actually looks like.
+    const reach = (ids: string[]): number => {
+      const below = (id: string): number => {
+        const kids = org.agents.filter((x) => x.parent === id);
+        return kids.reduce((n, k) => n + 1 + below(k.id), 0);
+      };
+      return Math.max(1, ids.reduce((n, id) => n + below(id), 0));
+    };
     return [...declared.entries()]
       .sort((x, y) => x[0].localeCompare(y[0]))
       .map(([r, by]) => ({
@@ -1737,9 +1793,9 @@ function RulesScreen({ org }: { org: BOrg }) {
         global: by.includes(org.root),
         declaredBy: by.map(name),
         inheritedBy: (inherited.get(r) ?? []).map(name),
+        reach: reach(by),
       }));
   }, [org]);
-  const maxBind = Math.max(1, org.agents.length - 1);
 
   return (
     <div className="screen">
@@ -1770,8 +1826,8 @@ function RulesScreen({ org }: { org: BOrg }) {
                   </span>
                 )}
               </div>
-              <div className="rule-bar">
-                <i style={{ width: `${Math.round((r.inheritedBy.length / maxBind) * 100)}%` }} />
+              <div className="rule-bar" title={`binds ${r.inheritedBy.length} of the ${r.reach} below its declarer`}>
+                <i style={{ width: `${Math.round((Math.min(r.inheritedBy.length, r.reach) / r.reach) * 100)}%` }} />
               </div>
             </div>
           ))}

@@ -160,8 +160,14 @@ export const PANEL_CSS = String.raw`
      — the texture was there in the stylesheet and absent on screen. */
   --dot: rgba(27, 24, 21, 0.055);
   /* the GM plate is the one lit plate on the rack, so it keeps a gradient.
-     It is drawn FROM the ramp rather than from two loose hexes. */
-  --surface-lift: linear-gradient(180deg, var(--s-overlay), var(--s-card));
+     It is drawn FROM the ramp rather than from two loose hexes. Measured on
+     the shipped board: overlay→card is a ≤7/255 travel in the light theme —
+     the "lit" plate was indistinguishable from a department at a glance, so
+     the four-finish ladder was missing its TOP rung in the default theme.
+     The grade now lands on accent-dim, the brass voice's own wash: a real
+     warm travel, no new colour, and rank II reads before a word. The dark
+     theme overrides this with its own pair (already a 20-unit travel). */
+  --surface-lift: linear-gradient(180deg, var(--s-overlay), var(--accent-dim));
   --surface-lift-edge: #ddcda8;
 
   /* INK. Every value below clears WCAG AA (4.5:1) against every rung of the
@@ -387,7 +393,9 @@ export const PANEL_CSS = String.raw`
   padding: var(--sp-4); cursor: pointer; transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
   animation: settle 0.4s ease both;
 }
-.bk-card:hover { border-color: hsl(var(--h) 45% 55% / 0.6); transform: translateY(-2px); box-shadow: 0 8px 26px hsl(var(--h) 50% 50% / 0.10); }
+/* hue is legal on a bucket; a hue-tinted SHADOW is a fourth depth outside the
+   set. The border carries the hue, the shadow comes from the ramp. */
+.bk-card:hover { border-color: hsl(var(--h) 45% 55% / 0.6); transform: translateY(-2px); box-shadow: var(--sh-2); }
 .bk-top { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .bk-dot { width: 9px; height: 9px; border-radius: 50%; background: hsl(var(--h) 55% 60%); box-shadow: 0 0 9px hsl(var(--h) 55% 60% / 0.7); display: inline-block; }
 .bk-name { font-size: var(--t-3); font-weight: var(--w-strong); }
@@ -447,12 +455,20 @@ export const PANEL_CSS = String.raw`
   .tl-top { flex-wrap: wrap; }
   .tl-when { margin-left: 0; width: 100%; }
   .tl-sum { margin: 0; max-width: 96ch; }
+  /* a LEDGER is ruled, not carded: at register width the row sheds its card
+     costume (border+radius+fill) for a single hairline rule, and the emoji
+     tile goes — it was the third identity cue on a row that already carries
+     the hue dot and the name. Hover restores the card so the pointed-at row
+     still comes forward. */
+  .tl-body { border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; padding: var(--sp-3) var(--sp-2); }
+  .tl-row:hover .tl-body { background: var(--s-card); border-bottom-color: var(--line); transform: none; }
+  .tl-ava { display: none; }
 }
 
 /* rules */
 /* rules are independent items, so they grid. Ten full-width slabs stacked in a
    900px column was the single worst use of a 1600px window on the board. */
-.rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: var(--sp-3); align-items: start; }
+.rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr)); gap: var(--sp-3); align-items: start; }
 .rule-card { background: var(--s-card); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--sp-3); animation: settle 0.35s ease both; transition: border-color 0.15s; }
 .rule-card:hover { border-color: var(--accent); }
 .rule-top { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-1); }
@@ -466,7 +482,10 @@ export const PANEL_CSS = String.raw`
 
 /* graph */
 .graph-wrap { flex: 1; min-height: 0; display: flex; }
-.graph-frame { flex: 1; border: none; background: #06080e; }
+/* the ground behind the iframe while it loads — from the ramp, not the dead
+   dark token sheet (#06080e was tokens.css --bg). The viewer inside paints
+   its own night; this is only the page showing through first. */
+.graph-frame { flex: 1; border: none; background: var(--s-ground); }
 
 /* dossier extras */
 .doss-head-actions { margin-left: auto; display: flex; gap: var(--sp-1); }
@@ -491,7 +510,9 @@ export const PANEL_CSS = String.raw`
   max-width: 210px; margin-top: calc(var(--sp-1) * -1);
   background: transparent; border: 0; padding: var(--sp-2) 0 0;
 }
-.oc-tray.fail { border-color: rgba(224, 123, 106, 0.5); box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5), 0 6px 18px -8px rgba(224, 123, 106, 0.28); }
+/* the inset near-black was a dark-theme relic firing on warm paper too;
+   the tinted border + wash carry the state, the depth comes from the set. */
+.oc-tray.fail { border-color: rgba(224, 123, 106, 0.5); box-shadow: var(--sh-1); }
 .oc-tray.warn { border-color: rgba(217, 160, 91, 0.42); }
 .oc-mac {
   display: inline-flex; align-items: center; gap: var(--sp-1);
@@ -520,7 +541,7 @@ export const PANEL_CSS = String.raw`
   transition: transform .2s ease, box-shadow .2s ease;
 }
 .oc-mac:hover .mac-brand,
-.oc-mac.sel .mac-brand { transform: scale(1.06); box-shadow: 0 5px 14px -5px rgba(0, 0, 0, 0.85); }
+.oc-mac.sel .mac-brand { transform: scale(1.06); box-shadow: var(--sh-3); }
 .mac-name { white-space: nowrap; max-width: 76px; overflow: hidden; text-overflow: ellipsis; }
 .mac-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; display: inline-block; }
 /* the halos are drawn from the state colours themselves rather than from three
@@ -606,6 +627,13 @@ export const PANEL_CSS = String.raw`
   background-size: 28px 28px;
 }
 .tree-hint { color: var(--ink-3); font-family: var(--mono); font-size: var(--t-1); letter-spacing: .05em; margin: 0 0 var(--sp-4); text-align: center; }
+/* the failed-health notice: quiet absence is only honest when the read
+   succeeded, so a dead reports API is said ON the board, in the warn voice.
+   NOT hidden by the narrow-width queries that hide .tree-hint — an outage
+   notice that disappears on a laptop window is no notice at all. */
+.tree-warn { color: var(--warn); background: var(--warn-wash); border: 1px solid var(--warn); border-radius: var(--r-sm); font-size: var(--t-2); line-height: 1.5; padding: var(--sp-1) var(--sp-3); margin: 0 auto var(--sp-4); max-width: 72ch; text-align: center; }
+.tree-warn b { font-weight: var(--w-strong); }
+.tree-warn code { font-family: var(--mono); font-size: var(--t-1); }
 
 /* ── RANK HEADERS (from the ministry organigram) ───────────────────────────
    Rank is NAMED, never inferred from indentation. Roman numerals + a rule
@@ -932,7 +960,9 @@ export const PANEL_CSS = String.raw`
 .oc-folded-summary:hover { border-color: var(--accent); color: var(--accent-2); }
 /* "show the law": the SAME rails, re-read as authority. The SVG plane swaps to
    a travelling dashed brass so the law is seen flowing down the cascade. */
-.rail-line { stroke: var(--line-2); stroke-width: 1.5; stroke-linecap: round; fill: none; }
+/* the resting rail is STRUCTURE, not an accent — at 1.5px on the light ground
+   the authority chain the whole layout exists to show nearly vanished. */
+.rail-line { stroke: var(--line-2); stroke-width: 2; stroke-linecap: round; fill: none; }
 .rail-dash { stroke: var(--accent-2); stroke-width: 1; fill: none; stroke-dasharray: 2 9; opacity: 0; }
 .law-on .rail-line { stroke: var(--accent); stroke-width: 1.9; opacity: .9; }
 .law-on .rail-dash { opacity: .95; animation: rail-flow 700ms linear infinite; }
@@ -1124,9 +1154,18 @@ export const PANEL_CSS = String.raw`
    one object on the shelf that has come forward. */
 .ag.staff { background: transparent; box-shadow: none; border-color: var(--line-soft); }
 .ag.staff:hover { background: var(--s-card); box-shadow: var(--sh-2); }
-/* an unhealthy plate keeps its wash and tinted border at every rank — state
-   outranks finish, or the amber one stops being findable peripherally. */
-.ag.staff.h-warn, .ag.staff.h-fail { box-shadow: var(--sh-1); }
+/* STATE OUTRANKS FINISH, RESTATED IN FULL — because this rule sits LATER in
+   source than .ag.sel, .ag.over, .ag.h-warn and .ag.h-fail at the same
+   specificity, its transparent/hairline finish was silently stripping the
+   selection ring, the drag-over highlight AND the health wash from every
+   staff plate: the majority rank had no visible selected state and a warn
+   machine rendered near-identical to a healthy one. The exact cascade trap
+   documented at the law plate, hit again 380 lines later in the same commit.
+   Every state a staff plate can carry is therefore restored EXPLICITLY: */
+.ag.staff.sel { background: var(--s-card); border-color: var(--accent); box-shadow: var(--sh-3), 0 0 0 3px var(--accent-dim); }
+.ag.staff.over { background: var(--s-card); border-color: var(--accent-2); box-shadow: var(--sh-3), 0 0 0 4px var(--accent-dim); }
+.ag.staff.h-warn { background: linear-gradient(180deg, var(--warn-wash), var(--s-card) 52%); border-color: var(--warn); box-shadow: var(--sh-1); }
+.ag.staff.h-fail { background: linear-gradient(180deg, var(--fail-wash), var(--s-card) 52%); border-color: var(--fail); box-shadow: var(--sh-1); }
 
 /* the name and its role are ONE thought, so they sit sp-1 apart; the role and
    the machinery below it are not, so that gap is sp-3. */
@@ -1162,8 +1201,11 @@ export const PANEL_CSS = String.raw`
 .ag-fact-health.ok, .ag-fact-health.warn, .ag-fact-health.fail { color: var(--ink-2); }
 .ag-fact-report { margin-left: auto; color: var(--ink-3); font-weight: var(--w-body); font-family: var(--mono); font-size: var(--t-1); }
 /* the expected beat, quieter than the fact it qualifies — it is the ruler, not
-   the measurement, so it must never out-shout "reported 4d ago". */
-.ag-cadence { font-weight: var(--w-body); color: var(--ink-3); opacity: .62; }
+   the measurement, so it must never out-shout "reported 4d ago". Quieting
+   comes from the mono face and the size, NEVER from opacity on ink: .62 on
+   the minimum-passing ink-3 composited to ~2.5:1, an AA failure by
+   arithmetic that no full-opacity swatch audit could ever catch. */
+.ag-cadence { font-weight: var(--w-body); color: var(--ink-3); }
 
 /* "show the law": the boot-order chain, printed on the plate only while the
    toggle is on — the product's core idea, made literal per plate. */
@@ -1231,9 +1273,14 @@ export const PANEL_CSS = String.raw`
 /* No side-stripe. It was a 2px brass border-left that said nothing the
    status dot doesn't already say properly, and a coloured side-stripe on a
    card is a banned pattern in the house design laws. Full 1px border; the
-   whole edge answers on hover. */
+   whole edge answers on hover.
+   STAFF FINISH, deliberately: the dossier was winning the whole page's first
+   read — a bright full-height column of boxed cards beside a tree that is
+   40% empty ground — so its reports take rank IV's quiet treatment
+   (transparent, hairline) and the panel reads as ANNOTATION of the board
+   rather than a second board. Hover still fills, exactly as staff plates do. */
 .doss-rep {
-  background: var(--s-card); border: 1px solid var(--line);
+  background: transparent; border: 1px solid var(--line-soft);
   border-radius: var(--r-md); padding: var(--sp-2) var(--sp-3); animation: settle 0.35s ease both;
 }
 .doss-rep-top { display: flex; align-items: baseline; gap: var(--sp-2); }
@@ -1255,8 +1302,8 @@ export const PANEL_CSS = String.raw`
 .chip { transition: transform .16s var(--ease), background .18s ease; font-size: var(--t-2); background: var(--accent-dim); color: var(--accent-2); border-radius: var(--r-sm); padding: var(--sp-1) var(--sp-2);
   border: 0; font-family: inherit; line-height: inherit; text-align: left; }
 .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* the one-of-many state, so the chosen filter is not carried by tone alone */
-.chip[aria-checked="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
+/* the pressed state, so the chosen filter is not carried by tone alone */
+.chip[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
 .chip.alt { background: var(--s-raised); color: var(--ink-2); }
 .doss-boot { font-size: var(--t-2); color: var(--ink-2); line-height: 1.6; margin: 0; white-space: pre-wrap; }
 /* contract — one click to open, edit in place, save flows to the org file */
@@ -1306,7 +1353,7 @@ export const PANEL_CSS = String.raw`
   .tabs { padding: 0 var(--sp-1); }
   .tab { padding: var(--sp-2); }
   .tree { padding: var(--sp-3) var(--sp-2) var(--sp-7); }
-  .tree-hint { display: none; }
+  /* .tree-hint is already hidden by the 1080 query, which covers this range */
   .ag { max-width: 100%; }
   .ag-role { display: none; }
   .screen { padding: var(--sp-4) var(--sp-3) var(--sp-7); }
@@ -1337,8 +1384,10 @@ export const PANEL_CSS = String.raw`
   }
   @keyframes sheetup { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   .doss-close { display: grid; }
-  /* zoom control clears the sheet — top-right of the chart */
+  /* zoom control clears the sheet — top-right of the chart. The hint occupied
+     the same band and ran under the pill between 761 and 1080. */
   .zoomer { top: var(--sp-1); right: var(--sp-2); bottom: auto; }
+  .tree-hint { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .doss { animation: none; } }
 `;
