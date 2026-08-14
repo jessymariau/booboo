@@ -563,16 +563,18 @@ body {
 
 .paper-foot { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
 
-/* ═══════════ FLAT ═══════════
-   Below 810px, and for anyone who asked for reduced motion, this stops being a
-   zoom at all. That is deliberate: the illusion depends on real perspective
-   motion at speed, and "the animation, off" would leave a page whose copy never
-   arrives. Every frame becomes a plain block in a readable stack, the graph
-   becomes a still hero, and the runway and instrument retire.
+/* ═══════════ FLAT (motion-gated only) ═══════════
+   This used to fire below 810px too, which is why the flythrough was flatly
+   ABSENT on every phone — not degraded, gone: a still graph at the top, then
+   plain stacked text. Nobody signed off on that as the experience; it was a
+   complexity shortcut that quietly ate the one thing this page is for.
+   Native touch scroll drives window.scrollY exactly the way wheel scroll does
+   — the scrub math in tunnel.js needs no different input on a phone. Flat
+   stays for prefers-reduced-motion ALONE, which is the one case where turning
+   the animation off is correct rather than a downgrade.
 
-   ⚠️ 810 is duplicated in tunnel.js. Change both or the driver will keep
-   painting frames the CSS has already put back into flow. */
-@media (max-width: 810px), (prefers-reduced-motion: reduce) {
+   ⚠️ Gate is duplicated in tunnel.js (the `calm` matchMedia). Change both. */
+@media (prefers-reduced-motion: reduce) {
   .graph { position: relative; inset: auto; height: 58vh; min-height: 320px; }
   .graph iframe { top: 0; left: 0; width: 100%; height: 100%; }
 
@@ -599,10 +601,23 @@ body {
     text-align: left;
     gap: 14px;
   }
-  .frame h2 { font-size: clamp(30px, 8.4vw, 44px); }
 
   .hud-rail { display: none; }
   .runway { display: none; }
+
+  .act { min-height: 0; padding: 0; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+  .act2 { display: flex; flex-direction: column; gap: 64px; padding: 8px 22px 0; }
+  .act-say::before { display: none; }
+  .act-code { padding: 20px 18px; font-size: 11.5px; line-height: 1.7; }
+}
+
+/* ═══════════ NARROW SCREEN (typography + spacing only) ═══════════
+   The flythrough now RUNS at every width — this is fit-to-viewport, not a
+   fallback. .graph / .tunnel / .frame / .scrim / .hud-rail / .runway are
+   deliberately untouched here: they stay pinned and scroll-driven exactly as
+   on desktop, just narrower. */
+@media (max-width: 810px) {
+  .frame h2 { font-size: clamp(30px, 8.4vw, 44px); }
 
   .nav { height: 64px; padding: 0 22px; }
   .nav-links { gap: 18px; }
@@ -621,15 +636,10 @@ body {
   .shape dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 32px; }
   .stat dd { font-size: 26px; }
 
-  /* ACT TWO GOES FLAT TOO. The graph is a still hero at the top of this layout,
-     not a fixed backdrop, so there is nothing behind these panels to see through
-     to and nothing to read over. They become ordinary stacked blocks and the
-     local wash is removed, or it would sit on the page as a grey smear. */
-  .act { min-height: 0; padding: 0; gap: 28px; grid-template-columns: minmax(0, 1fr); }
-  .act2 { display: flex; flex-direction: column; gap: 64px; padding: 8px 22px 0; }
-  .act-say::before { display: none; }
+  /* Act two keeps its grid (the graph is still a real fixed backdrop behind it
+     now, not retired), only the sizing narrows. */
+  .act { padding: 0; gap: 28px; grid-template-columns: minmax(0, 1fr); }
   .act h3, .act-handover h3 { font-size: 26px; max-width: 18ch; }
-  .act-code { padding: 20px 18px; font-size: 11.5px; line-height: 1.7; }
   .act a.cta { padding: 14px 22px; }
 }
 

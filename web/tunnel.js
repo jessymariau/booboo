@@ -77,9 +77,6 @@ const EASE_COPY = 0.1;
 const EASE_GRAPH = 0.07; /* deliberately slower than the copy: the graph settles
                             into each beat just behind the sentence. */
 
-/* ⚠️ Duplicated in tunnel.css. Change both together. */
-const STACK_BELOW = 810;
-
 const frames = Array.from(document.querySelectorAll(".frame"));
 const SPAN = Math.max(1, frames.length - 1 + LEAD);
 
@@ -189,9 +186,17 @@ window.addEventListener("message", (e) => {
 
 /* ── flat ────────────────────────────────────────────────────────────────── */
 
-const narrow = window.matchMedia(`(max-width: ${STACK_BELOW}px)`);
+/* Flat used to fire under a width match too, which is why the flythrough was
+   flatly ABSENT on every phone rather than merely narrower — a still graph up
+   top, then plain text, nothing pinned or scroll-driven below the fold. That
+   was a complexity shortcut, not a signed-off design: native touch scroll
+   drives window.scrollY exactly the way wheel scroll does, so the scrub math
+   below needs no different input on a phone. Flat now fires ONLY for
+   prefers-reduced-motion, which is the one case where turning it off is
+   correct rather than a downgrade. ⚠️ Gate is duplicated in tunnel.css
+   (the matching @media (prefers-reduced-motion: reduce) block). */
 const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
-let flat = narrow.matches || calm.matches;
+let flat = calm.matches;
 let raf = 0;
 
 function clearInlineFrameStyles() {
@@ -205,7 +210,7 @@ function clearInlineFrameStyles() {
 }
 
 function syncMode() {
-  const next = narrow.matches || calm.matches;
+  const next = calm.matches;
   if (next === flat) return;
   flat = next;
   if (flat) {
@@ -220,7 +225,6 @@ function syncMode() {
     start();
   }
 }
-narrow.addEventListener("change", syncMode);
 calm.addEventListener("change", syncMode);
 
 /* ── progress ────────────────────────────────────────────────────────────── */
