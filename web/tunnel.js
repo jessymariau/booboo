@@ -276,7 +276,19 @@ function paintFrames(world) {
     const sc = Math.pow(Math.max(1.05, BASE), t);
     const past = t > 0;
     const blur = past ? Math.min(26, t * 16 * sc) : (1 - op) * 3;
-    el.style.opacity = String(op * (past ? PAST_ALPHA : 1));
+    /* The 0.30 knock is a RAMP over (0..C], never a step at t=0. As written
+       first — `op * (past ? PAST_ALPHA : 1)` — a frame crossing its own centre
+       snapped from 1.0 to 0.30 in a single scroll pixel, once per beat, which
+       is the "few jumps between beats" Jesse reported on the live page
+       (measured: the discontinuity is exactly 0.70 of opacity at t=0). The
+       knock itself was attempt ④'s correct answer and is kept in full: from
+       t=C onward `1 - 0.7·min(1, t/C)` equals PAST_ALPHA exactly, so every
+       value in the tuned fade window [C, D] is unchanged and the collision
+       tuning above is untouched. Only the band (0, C) changes, from a cliff
+       into a slope — and there the incoming frame is still below A, so the
+       ramp cannot re-open the crossover collision either. */
+    const dim = past ? 1 - (1 - PAST_ALPHA) * Math.min(1, t / C) : 1;
+    el.style.opacity = String(op * dim);
     el.style.transform = `translate(-50%, -50%) scale(${sc.toFixed(4)})`;
     el.style.filter = blur > 0.15 ? `blur(${blur.toFixed(2)}px)` : "none";
   }
